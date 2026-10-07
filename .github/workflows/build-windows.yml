@@ -19,3 +19,4 @@ jobs:
         with:
           name: Recorder-Setup
           path: dist/*.exe
+          if-no-files-found: error

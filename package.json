@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "dist": "electron-builder --win nsis --x64"
+    "dist": "electron-builder --win nsis --x64 --publish never"
   },
   "build": {
     "appId": "com.sarabh83.recorder",
