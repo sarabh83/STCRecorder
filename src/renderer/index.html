@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:">
+<title>Recorder</title>
+<link rel="stylesheet" href="bar.css">
+</head>
+<body>
+<div id="bar">
+  <button id="src" class="btn" title="Choose what to share"><span class="ic">🖥</span><span id="srcName">Choose screen</span></button>
+  <button id="mic" class="btn tog on" title="Microphone"><span class="ic">🎤</span></button>
+  <button id="sys" class="btn tog" title="System audio (other people in the call)"><span class="ic">🔊</span></button>
+  <div id="meter" title="Microphone level"><i></i></div>
+  <button id="msg" class="link" dir="auto" hidden></button>
+  <span class="spacer"></span>
+  <button id="recover" class="btn" hidden>Recover</button>
+  <span id="time">00:00:00</span>
+  <button id="pause" class="btn" title="Pause / resume" disabled>⏸</button>
+  <button id="rec" class="btn rec" title="Start / stop (Ctrl+Shift+R)">● Rec</button>
+  <button id="close" class="btn x" title="Quit">✕</button>
+</div>
+<script src="silence.js"></script>
+<script src="recorder.js"></script>
+</body>
+</html>

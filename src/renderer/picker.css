@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #1b1b1f; color: #e8e8ee; font: 13px "Segoe UI", system-ui, sans-serif; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2c2c33; -webkit-app-region: drag; }
+h1 { font-size: 15px; margin: 0; font-weight: 600; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #9a9aa6; margin: 14px 0 8px; }
+main { padding: 0 16px 16px; height: calc(100% - 50px); overflow-y: auto; }
+button { -webkit-app-region: no-drag; font: inherit; color: inherit; background: #2c2c33; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.card { padding: 8px; border: 2px solid transparent; border-radius: 8px; background: #25252b; cursor: pointer; text-align: left; }
+.card:hover, .card:focus { border-color: #4c8dff; outline: 0; }
+.card img { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #111; border-radius: 4px; display: block; }
+.card span { display: block; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

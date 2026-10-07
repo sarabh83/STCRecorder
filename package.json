@@ -1,0 +1,40 @@
+{
+  "name": "recorder",
+  "productName": "Recorder",
+  "version": "0.1.0",
+  "description": "Very light screen recorder with crash-safe backups",
+  "main": "src/main/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.sarabh83.recorder",
+    "productName": "Recorder",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.6.0",
+    "electron-builder": "^26.15.3"
+  }
+}
