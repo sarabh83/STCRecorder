@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   settings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   pickSource: () => ipcRenderer.invoke('pick-source'),
+  micMenu: (devices, currentId) => ipcRenderer.invoke('mic:menu', devices, currentId),
   recStart: (meta) => ipcRenderer.invoke('rec:start', meta),
   recChunk: (buf) => ipcRenderer.send('rec:chunk', buf),
   recAudioChunk: (buf) => ipcRenderer.send('rec:audio-chunk', buf),

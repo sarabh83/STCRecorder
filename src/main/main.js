@@ -17,6 +17,8 @@ const DEFAULTS = {
   noiseSuppression: false,
   audioFile: true, // also save audio.webm next to the video
   mic: true,
+  micDeviceId: '', // '' = system default microphone
+  micLabel: '',
   system: false,
   silenceThresholdDb: -50,
   barX: null,
@@ -211,7 +213,31 @@ ipcMain.handle('settings:set', (e, patch) => {
   if (!fromBar(e) || !patch) return;
   const allowed = {};
   for (const k of ['mic', 'system']) if (typeof patch[k] === 'boolean') allowed[k] = patch[k];
+  for (const k of ['micDeviceId', 'micLabel']) if (typeof patch[k] === 'string') allowed[k] = patch[k].slice(0, 300);
   saveSettings(allowed);
+});
+
+// Native popup menu with the available microphones; resolves to {id,label} or null.
+ipcMain.handle('mic:menu', (e, devices, currentId) => {
+  if (!fromBar(e) || !Array.isArray(devices)) return null;
+  const list = devices
+    .filter((d) => d && typeof d.id === 'string' && typeof d.label === 'string')
+    .slice(0, 30);
+  return new Promise((resolve) => {
+    let chosen = null;
+    const item = (label, id) => ({
+      label: label.slice(0, 80) || 'Microphone',
+      type: 'radio',
+      checked: (currentId || '') === id,
+      click: () => { chosen = { id, label: id ? label : '' }; },
+    });
+    const menu = Menu.buildFromTemplate([
+      item('System default', ''),
+      ...(list.length ? [{ type: 'separator' }] : []),
+      ...list.filter((d) => d.id !== 'default' && d.id !== 'communications').map((d) => item(d.label, d.id)),
+    ]);
+    menu.popup({ window: bar, callback: () => setImmediate(() => resolve(chosen)) });
+  });
 });
 
 ipcMain.handle('pick-source', async (e) => (fromBar(e) ? pickSource() : null));

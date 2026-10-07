@@ -21,3 +21,12 @@ npm start        # run
 npm test         # unit tests
 npm run dist     # Windows installer (NSIS) in dist/
 ```
+
+## Choosing audio devices
+
+- **Microphone:** click the `▾` next to the 🎤 button and pick a device (laptop mic, USB mic, AirPods…).
+  The list updates when you plug or unplug a device. If the chosen mic is missing, the default is used.
+- **Bluetooth headsets (AirPods):** when used as a microphone they drop to phone quality. For the best
+  bootcamp audio use a USB/wired or the laptop mic, and keep AirPods for listening only.
+- **System audio** (the 🔊 button) records whatever Windows' default *output* device is. To record
+  another output device, set it as the default in Windows sound settings.

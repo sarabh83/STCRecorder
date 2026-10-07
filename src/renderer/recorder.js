@@ -2,7 +2,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const el = {
-    bar: $('bar'), src: $('src'), srcName: $('srcName'), mic: $('mic'), sys: $('sys'),
+    bar: $('bar'), src: $('src'), srcName: $('srcName'), mic: $('mic'), micPick: $('micPick'), sys: $('sys'),
     meter: $('meter').firstElementChild, msg: $('msg'), recover: $('recover'),
     time: $('time'), pause: $('pause'), rec: $('rec'), close: $('close'),
   };
@@ -12,6 +12,7 @@
     silence: 'آیا داری صحبت می‌کنی؟ صدایی ضبط نمی‌شود',
     silenceTitle: 'Recorder',
     noMic: 'No microphone found',
+    micMissing: 'Chosen microphone not found, using default',
     badSource: 'Source unavailable, choose again',
     saved: 'Saved – click to open',
     failed: 'Could not start recording',
@@ -47,6 +48,7 @@
     el.pause.textContent = next === 'paused' ? '▶' : '⏸';
     el.src.disabled = next !== 'idle';
     el.sys.disabled = next !== 'idle'; // system audio is decided when capture starts
+    el.micPick.disabled = next !== 'idle';
     window.api.setState(next);
   }
 
@@ -63,6 +65,54 @@
       el.src.title = res.name;
       setMsg('');
     }
+  }
+
+  // ---------- microphone selection ----------
+
+  let devices = []; // [{id, label}]
+
+  async function refreshDevices() {
+    try {
+      const all = await navigator.mediaDevices.enumerateDevices();
+      devices = all
+        .filter((d) => d.kind === 'audioinput')
+        .map((d, i) => ({ id: d.deviceId, label: d.label || `Microphone ${i + 1}` }));
+    } catch {
+      devices = [];
+    }
+  }
+
+  function paintMic() {
+    el.mic.title = `Microphone: ${S.micLabel || 'System default'}`;
+  }
+
+  // Opens the chosen microphone; falls back to the default if it is gone.
+  async function openMic() {
+    const base = {
+      channelCount: 2,
+      sampleRate: 48000,
+      echoCancellation: !!S.system,
+      noiseSuppression: !!S.noiseSuppression,
+      autoGainControl: false,
+    };
+    if (S.micDeviceId) {
+      try {
+        return await navigator.mediaDevices.getUserMedia({ audio: { ...base, deviceId: { exact: S.micDeviceId } } });
+      } catch {
+        setMsg(STRINGS.micMissing);
+      }
+    }
+    return navigator.mediaDevices.getUserMedia({ audio: base });
+  }
+
+  async function chooseMic() {
+    await refreshDevices();
+    const res = await window.api.micMenu(devices, S.micDeviceId || '');
+    if (!res) return;
+    S.micDeviceId = res.id;
+    S.micLabel = res.label;
+    window.api.setSettings({ micDeviceId: res.id, micLabel: res.label });
+    paintMic();
   }
 
   // ---------- recording ----------
@@ -86,15 +136,7 @@
       // on when system audio is also captured (otherwise speakers feed back in).
       let micStream = null;
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: 2,
-            sampleRate: 48000,
-            echoCancellation: !!S.system,
-            noiseSuppression: !!S.noiseSuppression,
-            autoGainControl: false,
-          },
-        });
+        micStream = await openMic();
         made.push(micStream);
       } catch {
         setMsg(STRINGS.noMic, { warn: false });
@@ -284,6 +326,7 @@
       if (!S.mic) setMsg('');
     }
   });
+  el.micPick.addEventListener('click', chooseMic);
   el.sys.addEventListener('click', () => {
     S.system = !S.system;
     window.api.setSettings({ system: S.system });
@@ -308,6 +351,13 @@
   (async () => {
     S = await window.api.settings();
     paintToggles();
+    paintMic();
+    // A short-lived stream makes the browser reveal device names; keep the list fresh on plug/unplug.
+    try {
+      (await navigator.mediaDevices.getUserMedia({ audio: true })).getTracks().forEach((t) => t.stop());
+    } catch { /* no mic or no permission */ }
+    refreshDevices();
+    navigator.mediaDevices.addEventListener('devicechange', refreshDevices);
     el.srcName.textContent = STRINGS.chooseScreen;
     el.recover.hidden = !(await window.api.recoverCheck());
   })();
