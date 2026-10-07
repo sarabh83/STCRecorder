@@ -78,6 +78,16 @@ class RecordingSession {
     if (this.audioFh) await this.audioFh.sync();
   }
 
+  // Synchronous best-effort flush for the moment Windows is shutting down.
+  flushSync() {
+    for (const h of [this.fh, this.audioFh]) {
+      if (!h) continue;
+      try {
+        fs.fsyncSync(h.fd);
+      } catch { /* nothing more we can do */ }
+    }
+  }
+
   async closeFiles() {
     if (this.fh) await this.fh.close();
     if (this.audioFh) await this.audioFh.close();

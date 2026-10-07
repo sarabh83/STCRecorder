@@ -3,24 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:">
-<title>Recorder</title>
-<link rel="stylesheet" href="bar.css">
+<title>Starecorder</title>
+<link rel="stylesheet" href="panel.css">
 </head>
 <body>
-<div id="bar">
-  <button id="src" class="btn" title="Choose what to share"><span class="ic">🖥</span><span id="srcName">Choose screen</span></button>
-  <button id="mic" class="btn tog on" title="Microphone"><span class="ic">🎤</span></button>
-  <button id="micPick" class="btn small" title="Choose microphone">▾</button>
-  <button id="sys" class="btn tog" title="System audio (other people in the call)"><span class="ic">🔊</span></button>
-  <div id="meter" title="Microphone level"><i></i></div>
-  <button id="msg" class="link" dir="auto" hidden></button>
-  <span class="spacer"></span>
-  <button id="recover" class="btn" hidden>Recover</button>
-  <span id="time">00:00:00</span>
-  <button id="pause" class="btn" title="Pause / resume" disabled>⏸</button>
-  <button id="rec" class="btn rec" title="Start / stop (Ctrl+Shift+R)">● Rec</button>
-  <button id="close" class="btn x" title="Quit">✕</button>
+<div id="root">
+  <section id="panel" aria-hidden="true">
+    <header id="head">
+      <span class="brand"><i data-icon="mic"></i>Starecorder</span>
+      <button id="collapse" class="icon-btn" title="Close panel"><i data-icon="chevron"></i></button>
+    </header>
+
+    <div class="row">
+      <span class="label">Screen</span>
+      <button id="src" class="field"><i data-icon="monitor"></i><span id="srcName">Choose screen or window</span></button>
+    </div>
+
+    <div class="row">
+      <span class="label">Sound</span>
+      <div id="mode" class="seg" role="group" aria-label="What to record">
+        <button data-mode="mic"><i data-icon="mic"></i>Me</button>
+        <button data-mode="system"><i data-icon="speaker"></i>Computer</button>
+        <button data-mode="both"><i data-icon="mic"></i><i data-icon="speaker"></i>Both</button>
+      </div>
+    </div>
+
+    <div class="row" id="micRow">
+      <span class="label">Microphone</span>
+      <div class="micline">
+        <button id="mute" class="icon-btn" title="Mute microphone"><i data-icon="mic"></i></button>
+        <select id="micSel" aria-label="Microphone"></select>
+      </div>
+      <div id="meter"><i></i></div>
+    </div>
+
+    <div id="msg" hidden></div>
+
+    <footer id="foot">
+      <span id="time">00:00:00</span>
+      <button id="pause" class="btn" title="Pause / resume" disabled><i data-icon="pause"></i></button>
+      <button id="rec" class="btn rec"><i data-icon="record"></i><span>Record</span></button>
+    </footer>
+    <div class="links">
+      <button id="recover" class="link" hidden>Recover last recording</button>
+      <span class="spacer"></span>
+      <button id="quit" class="link">Quit</button>
+    </div>
+  </section>
+
+  <button id="fab" title="Starecorder"><i data-icon="mic"></i><b class="badge"></b></button>
 </div>
+<script src="icons.js"></script>
 <script src="silence.js"></script>
 <script src="recorder.js"></script>
 </body>

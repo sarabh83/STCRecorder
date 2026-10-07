@@ -1,8 +1,8 @@
 {
-  "name": "recorder",
-  "productName": "Recorder",
+  "name": "starecorder",
+  "productName": "Starecorder",
   "version": "0.1.0",
-  "description": "Very light screen recorder with crash-safe backups",
+  "description": "Starecorder - very light screen recorder with crash-safe backups",
   "main": "src/main/main.js",
   "private": true,
   "scripts": {
@@ -11,8 +11,8 @@
     "dist": "electron-builder --win nsis --x64 --publish never"
   },
   "build": {
-    "appId": "com.sarabh83.recorder",
-    "productName": "Recorder",
+    "appId": "com.sarabh83.starecorder",
+    "productName": "Starecorder",
     "files": [
       "src/**/*",
       "package.json"

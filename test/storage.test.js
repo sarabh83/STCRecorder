@@ -70,3 +70,14 @@ test('no audio file is created unless requested', async () => {
   await s.finish();
   assert.strictEqual(fs.existsSync(s.audioFile), false);
 });
+
+test('flushSync does not throw while open or after close', async () => {
+  const base = tmp();
+  const s = new RecordingSession(base, { audioFile: true });
+  await s.start();
+  s.append(Buffer.from('x'));
+  await s.flush();
+  s.flushSync();
+  await s.finish();
+  s.flushSync();
+});

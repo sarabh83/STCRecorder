@@ -17,6 +17,6 @@ jobs:
       - run: npm run dist
       - uses: actions/upload-artifact@v4
         with:
-          name: Recorder-Setup
+          name: Starecorder-Setup
           path: dist/*.exe
           if-no-files-found: error
