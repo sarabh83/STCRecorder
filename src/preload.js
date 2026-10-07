@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
   pickSource: () => ipcRenderer.invoke('pick-source'),
   recStart: (meta) => ipcRenderer.invoke('rec:start', meta),
   recChunk: (buf) => ipcRenderer.send('rec:chunk', buf),
+  recAudioChunk: (buf) => ipcRenderer.send('rec:audio-chunk', buf),
   recStop: () => ipcRenderer.invoke('rec:stop'),
   setState: (state) => ipcRenderer.send('rec:state', state),
   notify: (title, body) => ipcRenderer.send('notify', title, body),

@@ -15,6 +15,7 @@ const DEFAULTS = {
   codec: 'vp8',
   videoKbps: 2500,
   noiseSuppression: false,
+  audioFile: true, // also save audio.webm next to the video
   mic: true,
   system: false,
   silenceThresholdDb: -50,
@@ -166,6 +167,10 @@ function buildTrayMenu() {
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: recState === 'idle' ? 'Start recording' : 'Stop recording', click: () => bar && bar.webContents.send('toggle-record') },
     { type: 'separator' },
+    {
+      label: 'Bootcamp preset (mic + system audio, 24 fps, 5 Mbps)',
+      click: () => saveSettings({ mic: true, system: true, fps: 24, videoKbps: 5000, codec: 'vp8', audioFile: true }),
+    },
     { label: 'Frame rate', submenu: [15, 24, 30].map((f) => radio(`${f} fps`, 'fps', f)) },
     {
       label: 'Video quality',
@@ -178,6 +183,10 @@ function buildTrayMenu() {
     {
       label: 'Video codec',
       submenu: [radio('VP8 (lightest CPU)', 'codec', 'vp8'), radio('H.264 (may use GPU)', 'codec', 'h264')],
+    },
+    {
+      label: 'Also save separate audio file (audio.webm)', type: 'checkbox', checked: settings.audioFile,
+      click: (item) => saveSettings({ audioFile: item.checked }),
     },
     {
       label: 'Mic noise suppression', type: 'checkbox', checked: settings.noiseSuppression,
@@ -230,7 +239,7 @@ ipcMain.on('picker:cancel', (e) => { if (fromPicker(e)) picker.__done(null); });
 
 ipcMain.handle('rec:start', async (e, meta) => {
   if (!fromBar(e) || rec) return null;
-  rec = new RecordingSession(baseDir(), meta || {});
+  rec = new RecordingSession(baseDir(), { ...(meta || {}), audioFile: !!settings.audioFile });
   await rec.start();
   ckTimer = setInterval(() => rec && rec.checkpoint().catch(() => {}), CHECKPOINT_MS);
   syncTimer = setInterval(() => rec && rec.flush().catch(() => {}), SYNC_MS);
@@ -238,6 +247,9 @@ ipcMain.handle('rec:start', async (e, meta) => {
 });
 ipcMain.on('rec:chunk', (e, buf) => {
   if (fromBar(e) && rec && buf) rec.append(Buffer.from(buf));
+});
+ipcMain.on('rec:audio-chunk', (e, buf) => {
+  if (fromBar(e) && rec && buf) rec.appendAudio(Buffer.from(buf));
 });
 ipcMain.handle('rec:stop', async (e) => {
   if (!fromBar(e) || !rec) return null;
@@ -296,7 +308,9 @@ ipcMain.handle('recover:run', async (e) => {
   if (response === buttons.length - 1) return false;
   if (response > 0) {
     const c = cps[response - 1];
-    await exportVersion(inc.dir, c.bytes, `version-${Math.round((c.t - inc.journal.startedAt) / 1000)}s.webm`);
+    const tag = Math.round((c.t - inc.journal.startedAt) / 1000);
+    await exportVersion(inc.dir, c.bytes, `version-${tag}s.webm`);
+    if (c.audioBytes > 0) await exportVersion(inc.dir, c.audioBytes, `version-${tag}s-audio.webm`, 'audio.webm');
   }
   markDone(inc.dir);
   shell.showItemInFolder(inc.file);

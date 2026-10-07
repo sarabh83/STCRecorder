@@ -103,6 +103,15 @@
       const ctx = new AudioContext({ sampleRate: 48000, latencyHint: 'playback' });
       const dest = ctx.createMediaStreamDestination();
       dest.channelCount = 2;
+      // Master bus: a limiter stops a loud guest / video from clipping the mix.
+      const master = ctx.createGain();
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -10;
+      limiter.knee.value = 6;
+      limiter.ratio.value = 12;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.25;
+      master.connect(limiter).connect(dest);
       let analyser = null;
       let micGain = null;
       if (micStream) {
@@ -112,10 +121,14 @@
         micGain = ctx.createGain();
         micGain.gain.value = S.mic ? 1 : 0;
         micSrc.connect(analyser);
-        micSrc.connect(micGain).connect(dest);
+        micSrc.connect(micGain).connect(master);
       }
       const sysTracks = display.getAudioTracks();
-      if (sysTracks.length) ctx.createMediaStreamSource(new MediaStream([sysTracks[0]])).connect(dest);
+      if (sysTracks.length) {
+        const sysGain = ctx.createGain();
+        sysGain.gain.value = 0.8; // voice of the person teaching stays slightly on top
+        ctx.createMediaStreamSource(new MediaStream([sysTracks[0]])).connect(sysGain).connect(master);
+      }
       const hasAudio = !!micStream || sysTracks.length > 0;
 
       const stream = new MediaStream([
@@ -134,6 +147,22 @@
       const info = await window.api.recStart({ mimeType, fps: S.fps, source: source.name });
       if (!info) throw new Error('main refused to start');
 
+      // Same sound again as an audio-only file: an independent copy of the full conversation.
+      let audioRecorder = null;
+      let audioStopped = Promise.resolve();
+      let audioChain = Promise.resolve();
+      if (hasAudio && S.audioFile && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        audioRecorder = new MediaRecorder(new MediaStream(dest.stream.getAudioTracks()), {
+          mimeType: 'audio/webm;codecs=opus',
+          audioBitsPerSecond: 128000,
+        });
+        audioStopped = new Promise((resolve) => { audioRecorder.onstop = resolve; });
+        audioRecorder.ondataavailable = (e) => {
+          if (!e.data || !e.data.size) return;
+          audioChain = audioChain.then(() => e.data.arrayBuffer()).then((b) => window.api.recAudioChunk(b));
+        };
+      }
+
       let chain = Promise.resolve(); // keeps chunks in order
       recorder.ondataavailable = (e) => {
         if (!e.data || !e.data.size) return;
@@ -141,6 +170,8 @@
       };
       recorder.onstop = async () => {
         await chain;
+        await audioStopped;
+        await audioChain;
         const res = await window.api.recStop();
         lastFile = res && res.file;
         cleanup();
@@ -159,12 +190,13 @@
       if (!analyser || !S.mic) detector.pause();
 
       rt = {
-        display, micStream, ctx, recorder, analyser, micGain, detector,
+        display, micStream, ctx, recorder, audioRecorder, analyser, micGain, detector,
         buf: new Float32Array(1024),
         startedAt: now, pausedAt: 0, pausedTotal: 0, lastSecond: -1,
         timer: setInterval(tick, TICK_MS),
       };
       recorder.start(2000);
+      if (audioRecorder) audioRecorder.start(2000);
       setState('recording');
     } catch (err) {
       for (const s of made) s.getTracks().forEach((t) => t.stop());
@@ -188,6 +220,7 @@
 
   function stop() {
     if (!rt || state === 'idle') return;
+    if (rt.audioRecorder && rt.audioRecorder.state !== 'inactive') rt.audioRecorder.stop();
     if (rt.recorder.state !== 'inactive') rt.recorder.stop();
   }
 
@@ -196,12 +229,14 @@
     const now = performance.now();
     if (state === 'recording') {
       rt.recorder.pause();
+      if (rt.audioRecorder) rt.audioRecorder.pause();
       rt.pausedAt = now;
       rt.detector.pause();
       setMsg('');
       setState('paused');
     } else if (state === 'paused') {
       rt.recorder.resume();
+      if (rt.audioRecorder) rt.audioRecorder.resume();
       rt.pausedTotal += now - rt.pausedAt;
       if (rt.analyser && S.mic) rt.detector.resume(now);
       setState('recording');
@@ -265,7 +300,10 @@
     stop();
   });
   window.api.onToggle(() => (state === 'idle' ? start() : stop()));
-  window.api.onSettings((s) => { S = { ...S, ...s, mic: S.mic, system: S.system }; });
+  window.api.onSettings((s) => {
+    S = state === 'idle' ? { ...S, ...s } : { ...S, ...s, mic: S.mic, system: S.system };
+    paintToggles();
+  });
 
   (async () => {
     S = await window.api.settings();

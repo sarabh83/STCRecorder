@@ -47,3 +47,26 @@ test('exportVersion cuts the file at a checkpoint without touching the original'
   markDone(s.dir);
   assert.strictEqual(findIncomplete(base), null);
 });
+
+test('separate audio file is written and finished alongside the video', async () => {
+  const base = tmp();
+  const s = new RecordingSession(base, { audioFile: true });
+  await s.start();
+  s.append(Buffer.from('video'));
+  s.appendAudio(Buffer.from('aud'));
+  const cp = await s.checkpoint();
+  s.appendAudio(Buffer.from('io'));
+  await s.finish();
+  assert.strictEqual(fs.readFileSync(s.file, 'utf8'), 'video');
+  assert.strictEqual(fs.readFileSync(s.audioFile, 'utf8'), 'audio');
+  assert.strictEqual(cp.audioBytes, 3);
+});
+
+test('no audio file is created unless requested', async () => {
+  const base = tmp();
+  const s = new RecordingSession(base);
+  await s.start();
+  s.appendAudio(Buffer.from('x'));
+  await s.finish();
+  assert.strictEqual(fs.existsSync(s.audioFile), false);
+});
