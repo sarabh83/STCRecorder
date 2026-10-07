@@ -24,6 +24,7 @@
   let state = 'idle'; // idle | recording | paused
   let rt = null; // runtime objects of the current recording
   let lastFile = null;
+  let micMsgTimer = null;
 
   const fmt = (ms) => {
     const s = Math.floor(ms / 1000);
@@ -142,6 +143,16 @@
         setMsg(STRINGS.noMic, { warn: false });
       }
 
+      // Show which microphone is really in use, so there is no doubt (also stored in the journal).
+      const micTrack = micStream && micStream.getAudioTracks()[0];
+      const micName = micTrack ? micTrack.label : '';
+      if (micName) {
+        const fellBack = S.micDeviceId && micTrack.getSettings().deviceId !== S.micDeviceId;
+        setMsg(`${fellBack ? 'Default mic' : 'Mic'}: ${micName}`, { warn: false });
+        clearTimeout(micMsgTimer);
+        micMsgTimer = setTimeout(() => { if (el.msg.textContent.includes(micName)) setMsg(''); }, 8000);
+      }
+
       const ctx = new AudioContext({ sampleRate: 48000, latencyHint: 'playback' });
       const dest = ctx.createMediaStreamDestination();
       dest.channelCount = 2;
@@ -186,7 +197,7 @@
         audioBitsPerSecond: 128000,
       });
 
-      const info = await window.api.recStart({ mimeType, fps: S.fps, source: source.name });
+      const info = await window.api.recStart({ mimeType, fps: S.fps, source: source.name, mic: micName });
       if (!info) throw new Error('main refused to start');
 
       // Same sound again as an audio-only file: an independent copy of the full conversation.
