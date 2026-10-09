@@ -10,6 +10,10 @@ recording, you keep everything up to the last few seconds.
 
 Built with Electron. Free, no account, no cloud, no watermark, no telemetry.
 
+<p align="center">
+  <img src="docs/ui.png" alt="STC Recorder: the record panel and the recordings library" width="80%">
+</p>
+
 ## Download
 
 **[Download the latest release (Windows installer)](https://github.com/sarabh83/recorder/releases/latest)**
