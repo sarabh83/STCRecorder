@@ -1,44 +1,48 @@
-"""Draws the Starecorder microphone icon (build/icon.png and the tray icons).
+"""Draws the STC Recorder icon (build/icon.png and the tray icons): a green record dot
+inside a ring that is still being drawn. The vector master is design/logo.svg.
 Run: python3 scripts/make-icons.py   (needs Pillow). The PNGs are committed."""
+import math
+
 from PIL import Image, ImageDraw
 
 S = 1024  # supersampled canvas
-K = S / 448  # the mic is designed on a 448 x 448 grid
+K = S / 256  # the mark is designed on a 256 x 256 grid
+
+INK = (5, 19, 32, 255)
+GREEN = (1, 205, 152, 255)
+AMBER = (250, 204, 21, 255)
+
+RING_R, RING_W, DOT_R = 98, 26, 46  # centre-line radius and width of the ring, radius of the dot
+GAP = (-90, -30)  # the ring is open from the top to 30 degrees above the right
 
 
-def mic(d, ox, oy, scale, fill):
+def mark(d, ox, oy, scale, ring, dot):
     k = K * scale
 
     def p(x, y):
         return (ox + x * k, oy + y * k)
 
-    d.rounded_rectangle([*p(143, 28), *p(305, 290)], radius=81 * k, fill=fill)
-    w = 26 * k
-    # holder: half circle (centre 224,218, centre-line radius 114) with two upright arms
-    d.arc([*p(97, 91), *p(351, 345)], 0, 180, fill=fill, width=int(w))
-    for x in (110, 338):
-        d.rounded_rectangle([*p(x - 13, 205), *p(x + 13, 245)], radius=13 * k, fill=fill)
-    d.rectangle([*p(212, 330), *p(236, 392)], fill=fill)
-    d.rounded_rectangle([*p(165, 390), *p(283, 418)], radius=14 * k, fill=fill)
+    outer = RING_R + RING_W / 2
+    d.arc([*p(128 - outer, 128 - outer), *p(128 + outer, 128 + outer)], GAP[1], GAP[0] + 360, fill=ring, width=round(RING_W * k))
+    for angle in GAP:  # round ends
+        a = math.radians(angle)
+        cx, cy = 128 + RING_R * math.cos(a), 128 + RING_R * math.sin(a)
+        d.ellipse([*p(cx - RING_W / 2, cy - RING_W / 2), *p(cx + RING_W / 2, cy + RING_W / 2)], fill=ring)
+    d.ellipse([*p(128 - DOT_R, 128 - DOT_R), *p(128 + DOT_R, 128 + DOT_R)], fill=dot)
 
 
-def tile(size, badge=None):
+def tile(size, ring=INK, dot=GREEN):
     img = Image.new('RGBA', (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     d.rounded_rectangle([0, 0, S - 1, S - 1], radius=int(S * 0.22), fill=(255, 255, 255, 255))
-    scale = 0.72
+    scale = 0.74
     off = S * (1 - scale) / 2
-    mic(d, off, off, scale, (17, 17, 17, 255))
-    if badge:
-        r = S * 0.20
-        cx, cy = S * 0.77, S * 0.77
-        d.ellipse([cx - r - S * 0.03, cy - r - S * 0.03, cx + r + S * 0.03, cy + r + S * 0.03], fill=(255, 255, 255, 255))
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=badge)
+    mark(d, off, off, scale, ring, dot)
     return img.resize((size, size), Image.LANCZOS)
 
 
 tile(256).save('build/icon.png')
 tile(32).save('src/assets/tray.png')
-tile(32, (230, 50, 50, 255)).save('src/assets/tray-rec.png')
-tile(32, (240, 170, 30, 255)).save('src/assets/tray-pause.png')
+tile(32, GREEN, GREEN).save('src/assets/tray-rec.png')
+tile(32, INK, AMBER).save('src/assets/tray-pause.png')
 print('ok')

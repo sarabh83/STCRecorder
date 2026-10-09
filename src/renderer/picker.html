@@ -4,13 +4,22 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:">
 <title>Choose what to share</title>
+<link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="picker.css">
 </head>
 <body>
-<header><h1>Choose what to share</h1><button id="cancel">Cancel</button></header>
-<main>
+<header>
+  <h1>Choose what to record</h1>
+  <div id="mode" class="tabs" role="group" aria-label="How much of it to record">
+    <button data-mode="full" class="on">Whole screen or window</button>
+    <button data-mode="area">Select an area</button>
+  </div>
+  <button id="cancel">Cancel</button>
+</header>
+<main class="scroll-area">
+  <p id="areaHint" hidden>Pick a screen, then drag over the part of it you want to record.</p>
   <h2>Screens</h2><div id="screens" class="grid"></div>
-  <h2>Windows</h2><div id="windows" class="grid"></div>
+  <div id="windowsPart"><h2>Windows</h2><div id="windows" class="grid"></div></div>
 </main>
 <script src="picker.js"></script>
 </body>

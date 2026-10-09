@@ -1,0 +1,14 @@
+/* Shared by every window: the STC Recorder colours (white, ink #051320, green #01CD98) and the scroll area. */
+:root { color-scheme: light; --bg: #fff; --fg: #051320; --muted: #64748b; --line: #e2e8f0; --field: #f1f5f9; --field-hover: #e2e8f0;
+  --accent: #01CD98; --accent-hover: #00B586; --accent-soft: #E1F9F1;
+  --accent-text: #00805F; /* the green, dark enough to read as text on white */
+  --on-accent: #051320; /* text and icons on top of the green */
+  --ok: #01CD98; --ok-soft: #E1F9F1; --warn: #facc15; --warn-soft: #fef9c3; --warn-fg: #713f12; }
+
+/* Scroll area: thin rounded thumb that floats inside its own gutter, no track. */
+.scroll-area { overflow-y: auto; overscroll-behavior: contain; }
+.scroll-area::-webkit-scrollbar { width: 10px; }
+.scroll-area::-webkit-scrollbar-track { background: transparent; }
+.scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; background-clip: content-box; border: 3px solid transparent; border-radius: 999px; }
+.scroll-area::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+.scroll-area::-webkit-scrollbar-thumb:active { background-color: var(--accent); }

@@ -3,7 +3,7 @@
 // Pure logic (time is passed in) so it can be unit-tested without a browser.
 
 class SilenceDetector {
-  constructor({ thresholdDb = -50, timeoutMs = 30000 } = {}) {
+  constructor({ thresholdDb = -50, timeoutMs = 15000 } = {}) {
     this.thresholdDb = thresholdDb;
     this.timeoutMs = timeoutMs;
     this.reset(0);

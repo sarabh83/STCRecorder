@@ -7,17 +7,22 @@ contextBridge.exposeInMainWorld('api', {
   settings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   pickSource: () => ipcRenderer.invoke('pick-source'),
+  clearSource: () => ipcRenderer.send('source:clear'),
   uiSize: (expanded, height) => ipcRenderer.send('ui:size', expanded, height),
-  uiDrag: (phase, dx, dy) => ipcRenderer.send('ui:drag', phase, dx, dy),
+  uiDrag: (phase) => ipcRenderer.send('ui:drag', phase),
   recStart: (meta) => ipcRenderer.invoke('rec:start', meta),
   recChunk: (buf) => ipcRenderer.send('rec:chunk', buf),
   recAudioChunk: (buf) => ipcRenderer.send('rec:audio-chunk', buf),
   recStop: () => ipcRenderer.invoke('rec:stop'),
   setState: (state) => ipcRenderer.send('rec:state', state),
-  notify: (title, body) => ipcRenderer.send('notify', title, body),
+  uiMini: (width, height) => ipcRenderer.send('ui:mini', width, height),
+  openSoundSettings: () => ipcRenderer.send('open-sound-settings'),
   openFile: (file) => ipcRenderer.send('open-file', file),
-  recoverCheck: () => ipcRenderer.invoke('recover:check'),
-  recoverRun: () => ipcRenderer.invoke('recover:run'),
+  libList: () => ipcRenderer.invoke('lib:list'),
+  libPlay: (id) => ipcRenderer.send('lib:play', id),
+  libFolder: (id) => ipcRenderer.send('lib:folder', id),
+  libProcess: (id) => ipcRenderer.invoke('lib:process', id),
+  onLibProgress: (cb) => ipcRenderer.on('lib:progress', (_e, id, p) => cb(id, p)),
   quit: () => ipcRenderer.send('quit'),
   onToggle: (cb) => ipcRenderer.on('toggle-record', () => cb()),
   onSettings: (cb) => ipcRenderer.on('settings-changed', (_e, s) => cb(s)),
@@ -25,6 +30,15 @@ contextBridge.exposeInMainWorld('api', {
 
 contextBridge.exposeInMainWorld('picker', {
   list: () => ipcRenderer.invoke('picker:list'),
-  choose: (src) => ipcRenderer.send('picker:choose', src),
+  choose: (src, area) => ipcRenderer.send('picker:choose', src, area),
   cancel: () => ipcRenderer.send('picker:cancel'),
+});
+
+contextBridge.exposeInMainWorld('frameApi', {
+  onState: (cb) => ipcRenderer.on('frame:state', (_e, state) => cb(state)),
+});
+
+contextBridge.exposeInMainWorld('region', {
+  done: (rect) => ipcRenderer.send('region:done', rect),
+  cancel: () => ipcRenderer.send('region:cancel'),
 });

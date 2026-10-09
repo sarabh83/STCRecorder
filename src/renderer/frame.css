@@ -1,0 +1,8 @@
+/* Border around the selected area: dashed while it waits, solid once it is being recorded.
+   Drawn just outside the area (plus a hairline inside, for areas that touch the screen edge). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+#box { position: absolute; box-sizing: border-box; border-radius: 2px; outline: 3px dashed var(--accent); }
+body.recording #box, body.paused #box { outline-style: solid; box-shadow: inset 0 0 0 1px var(--accent); }
+body.recording #box { animation: started .6s ease-out; }
+body.paused #box { opacity: .55; }
+@keyframes started { from { outline-width: 10px; } }

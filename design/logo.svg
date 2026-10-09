@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">STC Recorder</title>
+  <!-- A record dot inside a ring that is still being drawn: recording in progress.
+       The ring is a 26-unit stroke on a radius of 98, open for 60 degrees from the top. -->
+  <g id="symbol">
+    <path fill="none" stroke="#051320" stroke-width="26" stroke-linecap="round" d="M128 30 A98 98 0 1 0 212.9 79"/>
+    <circle cx="128" cy="128" r="46" fill="#01CD98"/>
+  </g>
+</svg>

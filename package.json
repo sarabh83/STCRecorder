@@ -1,8 +1,9 @@
 {
-  "name": "starecorder",
-  "productName": "Starecorder",
+  "name": "stc-recorder",
+  "productName": "STC Recorder",
   "version": "0.1.0",
-  "description": "Starecorder - very light screen recorder with crash-safe backups",
+  "description": "STC Recorder - very light screen recorder with crash-safe backups",
+  "author": "Taha Hosseinpour",
   "main": "src/main/main.js",
   "private": true,
   "scripts": {
@@ -12,10 +13,14 @@
   },
   "build": {
     "appId": "com.sarabh83.starecorder",
-    "productName": "Starecorder",
+    "productName": "STC Recorder",
+    "copyright": "Copyright © 2026 Taha Hosseinpour",
     "files": [
       "src/**/*",
       "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**"
     ],
     "win": {
       "target": [
@@ -30,11 +35,16 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "STC-Recorder-Setup-${version}.${ext}",
+      "uninstallDisplayName": "STC Recorder"
     }
   },
   "devDependencies": {
     "electron": "^44.6.0",
     "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0"
   }
 }

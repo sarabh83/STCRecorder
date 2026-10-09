@@ -3,38 +3,79 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:">
-<title>Starecorder</title>
+<title>STC Recorder</title>
+<link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="panel.css">
 </head>
 <body>
 <div id="root">
   <section id="panel" aria-hidden="true">
     <header id="head">
-      <span class="brand"><i data-icon="mic"></i>Starecorder</span>
-      <button id="collapse" class="icon-btn" title="Close panel"><i data-icon="chevron"></i></button>
+      <span class="brand"><i data-icon="logo"></i><span id="title">STC Recorder</span></span>
+      <span class="head-btns">
+        <button id="quit" class="icon-btn idle-only" title="Quit STC Recorder"><i data-icon="logout"></i><span>Quit?</span></button>
+        <button id="collapse" class="icon-btn" title="Close panel"><i data-icon="chevron"></i></button>
+      </span>
     </header>
 
-    <div class="row">
+    <div id="tabs" class="tabs idle-only" role="tablist">
+      <button data-tab="record" role="tab" class="on">Record</button>
+      <button data-tab="library" role="tab">Recordings</button>
+    </div>
+
+    <div id="viewLibrary" hidden>
+      <div id="libList" class="scroll-area"></div>
+      <div id="libEmpty" hidden>No recordings yet</div>
+    </div>
+
+    <div id="viewRecord">
+    <div class="row idle-only">
       <span class="label">Screen</span>
       <button id="src" class="field"><i data-icon="monitor"></i><span id="srcName">Choose screen or window</span></button>
     </div>
 
-    <div class="row">
-      <span class="label">Sound</span>
-      <div id="mode" class="seg" role="group" aria-label="What to record">
-        <button data-mode="mic"><i data-icon="mic"></i>Me</button>
-        <button data-mode="system"><i data-icon="speaker"></i>Computer</button>
-        <button data-mode="both"><i data-icon="mic"></i><i data-icon="speaker"></i>Both</button>
+    <div class="row duo idle-only">
+      <div>
+        <span class="label">Video quality</span>
+        <div id="videoSel" class="select">
+          <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Video quality">
+            <span class="select-value"></span><i data-icon="chevron"></i>
+          </button>
+          <div class="select-menu scroll-area" role="listbox" hidden></div>
+        </div>
+      </div>
+      <div>
+        <span class="label">Sound quality</span>
+        <div id="audioSel" class="select">
+          <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Sound quality">
+            <span class="select-value"></span><i data-icon="chevron"></i>
+          </button>
+          <div class="select-menu scroll-area" role="listbox" hidden></div>
+        </div>
       </div>
     </div>
 
     <div class="row" id="micRow">
       <span class="label">Microphone</span>
-      <div class="micline">
-        <button id="mute" class="icon-btn" title="Mute microphone"><i data-icon="mic"></i></button>
-        <select id="micSel" aria-label="Microphone"></select>
+      <div class="line">
+        <button id="micMute" class="mute"><i data-icon="mic"></i></button>
+        <div id="micSel" class="select">
+          <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Microphone">
+            <span class="select-value"></span><i data-icon="chevron"></i>
+          </button>
+          <div class="select-menu scroll-area" role="listbox" hidden></div>
+        </div>
       </div>
-      <div id="meter"><i></i></div>
+      <div class="meter"><i id="micMeter"></i></div>
+    </div>
+
+    <div class="row" id="sysRow">
+      <span class="label">Computer sound</span>
+      <div class="line">
+        <button id="sysMute" class="mute"><i data-icon="speaker"></i></button>
+        <button id="sysDev" class="field" title="Recorded from the Windows default output. Click to change it in Sound settings."><span id="sysName">Windows default output</span></button>
+      </div>
+      <div class="meter"><i id="sysMeter"></i></div>
     </div>
 
     <div id="msg" hidden></div>
@@ -44,17 +85,20 @@
       <button id="pause" class="btn" title="Pause / resume" disabled><i data-icon="pause"></i></button>
       <button id="rec" class="btn rec"><i data-icon="record"></i><span>Record</span></button>
     </footer>
-    <div class="links">
-      <button id="recover" class="link" hidden>Recover last recording</button>
-      <span class="spacer"></span>
-      <button id="quit" class="link">Quit</button>
     </div>
   </section>
 
-  <button id="fab" title="Starecorder"><i data-icon="mic"></i><b class="badge"></b></button>
+  <div id="tip" role="status" hidden><span id="tipText"></span><button id="tipOk" class="ok" title="Stop reminding me">OK</button></div>
+  <div id="dock">
+    <button id="clock" title="Recorded so far" hidden>0:00:00</button>
+    <button id="fab" title="STC Recorder"><i data-icon="logo"></i></button>
+  </div>
 </div>
 <script src="icons.js"></script>
+<script src="select.js"></script>
 <script src="silence.js"></script>
+<script src="crop.js"></script>
+<script src="library.js"></script>
 <script src="recorder.js"></script>
 </body>
 </html>
