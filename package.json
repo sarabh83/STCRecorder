@@ -9,7 +9,8 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "dist": "electron-builder --win nsis --x64 --publish never"
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "dist:mac": "electron-builder --mac dmg zip --publish never"
   },
   "build": {
     "appId": "com.sarabh83.starecorder",
@@ -38,6 +39,20 @@
       "deleteAppDataOnUninstall": false,
       "artifactName": "STC-Recorder-Setup-${version}.${ext}",
       "uninstallDisplayName": "STC Recorder"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon-mac.png",
+      "category": "public.app-category.video",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "STC-Recorder-${version}-mac-${arch}.${ext}",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "STC Recorder records your voice with the screen when you turn the microphone on."
+      }
     }
   },
   "devDependencies": {

@@ -41,7 +41,15 @@ def tile(size, ring=INK, dot=GREEN):
     return img.resize((size, size), Image.LANCZOS)
 
 
+def mac_icon():
+    # macOS draws app icons on a 1024 grid with the tile at 824 and a transparent margin around it
+    img = Image.new('RGBA', (1024, 1024), (0, 0, 0, 0))
+    img.paste(tile(824), (100, 100))
+    return img
+
+
 tile(256).save('build/icon.png')
+mac_icon().save('build/icon-mac.png')
 tile(32).save('src/assets/tray.png')
 tile(32, GREEN, GREEN).save('src/assets/tray-rec.png')
 tile(32, INK, AMBER).save('src/assets/tray-pause.png')

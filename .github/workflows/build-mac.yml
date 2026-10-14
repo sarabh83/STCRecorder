@@ -1,0 +1,31 @@
+name: Build macOS app
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+jobs:
+  build:
+    # One job per CPU type: ffmpeg-static downloads the ffmpeg binary for npm_config_arch at install
+    # time, so an x64 build needs its own install even though the runner itself is Apple Silicon.
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        env:
+          npm_config_arch: ${{ matrix.arch }}
+      - run: npm test
+      - run: npm run dist:mac -- --${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: STC-Recorder-mac-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error

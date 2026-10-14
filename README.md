@@ -113,6 +113,7 @@ npm install
 npm start        # run (from a VS Code terminal, clear ELECTRON_RUN_AS_NODE first)
 npm test         # unit tests
 npm run dist     # Windows installer (NSIS) in dist/
+npm run dist:mac # macOS .dmg and .zip in dist/ (run on a Mac)
 python3 scripts/make-icons.py   # regenerate the icons from design/logo.svg (needs Pillow)
 ```
 
@@ -125,7 +126,14 @@ test/            unit tests (node --test)
 design/logo.svg  logo master
 ```
 
-A GitHub Actions workflow builds the installer on every push.
+GitHub Actions builds the Windows installer and the macOS app (Apple Silicon and Intel) on every push; download them
+from the run's **Artifacts**.
+
+### macOS build (experimental)
+
+The Mac app is ad-hoc signed, not notarized, so macOS blocks it the first time. After copying it to Applications, run
+`xattr -cr "/Applications/STC Recorder.app"` once, then open it and allow **Screen Recording** (and **Microphone**) in
+System Settings > Privacy & Security. System sound capture has only been tested on Windows.
 
 ## Contributing
 
