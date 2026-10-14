@@ -5,7 +5,7 @@
 # STC Recorder
 
 A very light, open-source screen recorder for Windows and macOS. It lives as one small round icon in the corner of your
-screen. Click it, a panel slides out, press **Record**. If the app, Windows or the power dies in the middle of a
+screen. Click it, a panel slides out, press **Record**. If the app, the computer or the power dies in the middle of a
 recording, you keep everything up to the last few seconds.
 
 Built with Electron. Free, no account, no cloud, no watermark, no telemetry.
@@ -16,9 +16,84 @@ Built with Electron. Free, no account, no cloud, no watermark, no telemetry.
 
 ## Download
 
-**[Download the latest release (Windows installer)](https://github.com/sarabh83/recorder/releases/latest)**
+**[Download the latest release](https://github.com/sarabh83/recorder/releases/latest)** and pick the file for your
+computer (under **Assets** at the bottom of the release):
+
+| Your computer | File to download |
+|---|---|
+| Windows 10 or 11 | `STC-Recorder-Setup-<version>.exe` |
+| Mac with an Apple chip (M1, M2, M3, M4…) | `STC-Recorder-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `STC-Recorder-<version>-mac-x64.dmg` |
+
+Not sure which Mac you have? Click the Apple logo in the top-left corner > **About This Mac**. If it says **Chip: Apple M…**, take
+`arm64`. If it says **Processor: … Intel**, take `x64`.
+
+### Install on Windows
 
 Run `STC-Recorder-Setup-<version>.exe`. It installs per user, no admin rights needed.
+
+### Install on Mac
+
+Needs macOS 13 Ventura or newer. Recording the computer sound needs macOS 14.2 Sonoma or newer.
+
+STC Recorder is free and is not registered with Apple (that costs a yearly fee), so macOS refuses to open it until
+you tell it once that you trust it. That is step 3 below. It takes one command and you only do it once per install.
+
+**1. Copy the app to Applications**
+
+Double-click the `.dmg` you downloaded. In the window that opens, drag **STC Recorder** onto the **Applications**
+folder. Then eject the disk: right-click **STC Recorder** on the desktop (or in the Finder sidebar) > **Eject**.
+
+**2. Open Terminal**
+
+Press `Cmd + Space`, type `Terminal`, press `Return`.
+
+**3. Let macOS open the app**
+
+Copy this line, paste it into Terminal (`Cmd + V`) and press `Return`:
+
+```
+xattr -cr "/Applications/STC Recorder.app"
+```
+
+Nothing is printed when it works. You can close Terminal.
+
+> If you skip this step, macOS says *"STC Recorder is damaged and can't be opened"* or *"Apple could not verify
+> STC Recorder is free of malware"*. The app is not damaged: run the command above, then open it again.
+
+**4. Open STC Recorder**
+
+Open it from **Applications** or with `Cmd + Space` > `STC Recorder`. There is no Dock icon: the app is the small
+round icon in the bottom-right corner of the screen, plus an icon in the menu bar at the top.
+
+**5. Give it permission**
+
+macOS asks for each permission once. Answer like this:
+
+| macOS asks about | When | What to do |
+|---|---|---|
+| **Microphone** | when the app starts | **Allow** |
+| **Screen Recording** | the first time you click *Choose screen or window* | **Open System Settings**, turn **STC Recorder** on, then choose **Quit & Reopen** |
+| **System Audio Recording** | the first recording with computer sound on | **Allow** |
+
+If the screen list shows only your wallpaper, Screen Recording is still off. The yellow note in that window has a
+button that opens the right settings page. Turn **STC Recorder** on there, then quit the app (menu bar icon >
+**Quit**) and open it again.
+
+You can check or change all of these later in **System Settings > Privacy & Security** (sections *Microphone* and
+*Screen & System Audio Recording*).
+
+#### Updating on Mac
+
+Drag the new version onto Applications and choose **Replace**, then run the command from step 3 again. macOS may
+treat the new version as a new app and ask for the permissions again. If recording shows only the wallpaper after an
+update, open **System Settings > Privacy & Security > Screen & System Audio Recording**, select **STC Recorder**,
+remove it with the **–** button, then open the app and allow it again.
+
+#### Uninstalling on Mac
+
+Quit the app and drag **STC Recorder** from Applications to the Trash. Your recordings stay in
+`Movies/Starecorder` in your home folder. Settings are in `~/Library/Application Support/Starecorder`.
 
 ## Features
 
@@ -30,12 +105,12 @@ Run `STC-Recorder-Setup-<version>.exe`. It installs per user, no admin rights ne
 - Optional **Hide icon while recording**, and a global shortcut `Ctrl+Shift+R` (`Cmd+Shift+R` on Mac) to start/stop.
 
 ### It never records itself
-The icon, the panel, the source picker and the area border are excluded from capture using Windows content
+The icon, the panel, the source picker and the area border are excluded from capture using the system's content
 protection, so they never show up in your video.
 
 ### Crash-safe recordings
 - Video is written to disk continuously, in 1-second chunks, and forced to the physical disk every 5 seconds.
-- Extra flushes on system suspend, lock screen and Windows shutdown.
+- Extra flushes on system suspend, lock screen and shutdown.
 - A journal with checkpoints is kept next to every recording.
 - A recording that was cut off by a crash or a power loss is not lost. It appears in the **Recordings** tab, marked
   *interrupted*, and plays normally.
@@ -84,8 +159,10 @@ duration. Pause and resume while recording.
 
 ## Where files go
 
+Windows: `Videos\Starecorder\`. Mac: `Movies/Starecorder/` in your home folder. One folder per recording:
+
 ```
-Videos\Starecorder\<date-time>\
+<date-time>/
     recording.webm     the full video (VP8/H.264 + Opus)
     audio.webm         same sound, audio only (optional)
     recording.mp4      after "final processing"
@@ -95,12 +172,14 @@ Videos\Starecorder\<date-time>\
 (The folder keeps the app's old name, Starecorder, so recordings made before the rename are still found.)
 
 ## Tips for good audio
-- **Bluetooth headsets (AirPods):** Windows drops them to phone quality when they are used as a microphone. Use a
-  wired/USB or the laptop mic for recording and keep the headset for listening.
-- **Computer sound** is whatever Windows' default *output* device is. The panel shows its name; click it to open
-  Windows sound settings.
+- **Bluetooth headsets (AirPods):** Windows and macOS drop them to phone quality when they are used as a
+  microphone. Use a wired/USB or the laptop mic for recording and keep the headset for listening.
+- **Computer sound** is whatever the system's default *output* device is. The panel shows its name; click it to open
+  the sound settings.
+- **On Mac**, `.webm` recordings do not play in QuickTime. Use the final-processing (bolt) button in the Recordings
+  tab to make an MP4, or open them in VLC or IINA.
 
-## Tray menu
+## Tray / menu bar menu
 Start/stop, a *Bootcamp* preset (mic + system audio, 24 fps, 5 Mbps), frame rate, codec, separate audio file, hide
 icon while recording, noise suppression, open the recordings folder, quit.
 
@@ -129,15 +208,9 @@ design/logo.svg  logo master
 GitHub Actions builds the Windows installer and the macOS app (Apple Silicon and Intel) on every push; download them
 from the run's **Artifacts**.
 
-### macOS build (experimental)
-
-The Mac app is ad-hoc signed, not notarized, so macOS blocks it the first time. After copying it to Applications, run
-`xattr -cr "/Applications/STC Recorder.app"` once, then open it and allow **Screen Recording** (and **Microphone**) in
-System Settings > Privacy & Security. After turning on Screen Recording, quit and reopen the app.
-
-- **Computer sound** needs macOS 14.2 or newer (Apple's CoreAudio tap; macOS asks once for *System Audio Recording*).
-- The app lives in the menu bar and the corner icon; it has no Dock icon, like it has no taskbar button on Windows.
-- `.webm` recordings do not play in QuickTime: use the final-processing (bolt) button in the Recordings tab to make an MP4, or open them in VLC/IINA.
+The Mac app is ad-hoc signed and not notarized (no Apple Developer account), which is why the install steps above
+need the `xattr` command. Computer sound on macOS uses Apple's CoreAudio tap, which needs the
+`NSAudioCaptureUsageDescription` key set in `package.json`.
 
 ## Contributing
 
