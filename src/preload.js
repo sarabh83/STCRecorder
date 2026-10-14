@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 // The main process checks the sender of every message, so exposing one API to
 // both the bar and the picker is safe: each window only gets answers for its own calls.
 contextBridge.exposeInMainWorld('api', {
+  platform: process.platform,
   settings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   pickSource: () => ipcRenderer.invoke('pick-source'),
@@ -32,6 +33,8 @@ contextBridge.exposeInMainWorld('picker', {
   list: () => ipcRenderer.invoke('picker:list'),
   choose: (src, area) => ipcRenderer.send('picker:choose', src, area),
   cancel: () => ipcRenderer.send('picker:cancel'),
+  screenBlocked: () => ipcRenderer.invoke('picker:screen-blocked'),
+  openScreenSettings: () => ipcRenderer.send('picker:screen-settings'),
 });
 
 contextBridge.exposeInMainWorld('frameApi', {

@@ -51,7 +51,8 @@
       "hardenedRuntime": false,
       "artifactName": "STC-Recorder-${version}-mac-${arch}.${ext}",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "STC Recorder records your voice with the screen when you turn the microphone on."
+        "NSMicrophoneUsageDescription": "STC Recorder records your voice with the screen when you turn the microphone on.",
+        "NSAudioCaptureUsageDescription": "STC Recorder records the computer sound with the screen when you turn computer sound on."
       }
     }
   },

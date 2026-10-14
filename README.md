@@ -4,7 +4,7 @@
 
 # STC Recorder
 
-A very light, open-source screen recorder for Windows. It lives as one small round icon in the corner of your
+A very light, open-source screen recorder for Windows and macOS. It lives as one small round icon in the corner of your
 screen. Click it, a panel slides out, press **Record**. If the app, Windows or the power dies in the middle of a
 recording, you keep everything up to the last few seconds.
 
@@ -27,7 +27,7 @@ Run `STC-Recorder-Setup-<version>.exe`. It installs per user, no admin rights ne
   recording starts. Drag the icon anywhere; it remembers its place.
 - While recording, the icon turns green with a live level halo, and the time so far appears beside it.
 - Uses the lightest codec by default (VP8) at 24 to 30 fps. H.264 is available if you prefer GPU encoding.
-- Optional **Hide icon while recording**, and a global shortcut `Ctrl+Shift+R` to start/stop.
+- Optional **Hide icon while recording**, and a global shortcut `Ctrl+Shift+R` (`Cmd+Shift+R` on Mac) to start/stop.
 
 ### It never records itself
 The icon, the panel, the source picker and the area border are excluded from capture using Windows content
@@ -106,7 +106,7 @@ icon while recording, noise suppression, open the recordings folder, quit.
 
 ## Develop
 
-Requires Node.js 22 and Windows (screen and system-audio capture use Windows loopback).
+Requires Node.js 22, on Windows or macOS 13+.
 
 ```
 npm install
@@ -133,7 +133,11 @@ from the run's **Artifacts**.
 
 The Mac app is ad-hoc signed, not notarized, so macOS blocks it the first time. After copying it to Applications, run
 `xattr -cr "/Applications/STC Recorder.app"` once, then open it and allow **Screen Recording** (and **Microphone**) in
-System Settings > Privacy & Security. System sound capture has only been tested on Windows.
+System Settings > Privacy & Security. After turning on Screen Recording, quit and reopen the app.
+
+- **Computer sound** needs macOS 14.2 or newer (Apple's CoreAudio tap; macOS asks once for *System Audio Recording*).
+- The app lives in the menu bar and the corner icon; it has no Dock icon, like it has no taskbar button on Windows.
+- `.webm` recordings do not play in QuickTime: use the final-processing (bolt) button in the Recordings tab to make an MP4, or open them in VLC/IINA.
 
 ## Contributing
 

@@ -1,7 +1,7 @@
 'use strict';
 const {
   app, BrowserWindow, ipcMain, session, desktopCapturer, screen, Tray, Menu,
-  nativeImage, globalShortcut, shell, powerMonitor,
+  nativeImage, globalShortcut, shell, powerMonitor, systemPreferences,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -11,6 +11,11 @@ const { listRecordings, recordingDir, playablePath, processRecording } = require
 const { DEFAULTS, migrate, sanitizePatch } = require('./settings');
 
 const APP_NAME = 'STC Recorder';
+const IS_MAC = process.platform === 'darwin';
+const SHORTCUT = IS_MAC ? 'Cmd+Shift+R' : 'Ctrl+Shift+R';
+// Where the OS lets the user change the sound output and give the app screen access.
+const SOUND_SETTINGS = IS_MAC ? 'x-apple.systempreferences:com.apple.preference.sound' : 'ms-settings:sound';
+const SCREEN_SETTINGS = 'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture';
 const LEGACY_NAME = 'Starecorder';
 app.setPath('userData', path.join(app.getPath('appData'), LEGACY_NAME));
 
@@ -96,6 +101,11 @@ function placeWindow() {
   win.setBounds({ x, y, width, height });
 }
 
+// macOS: stay on every desktop (Space) and above full-screen apps, like the icon does on Windows.
+function onAllSpaces(w) {
+  if (IS_MAC) w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: ICON + 2 * PAD,
@@ -120,6 +130,7 @@ function createWindow() {
     },
   });
   win.setAlwaysOnTop(true, 'screen-saver');
+  onAllSpaces(win);
   win.setContentProtection(true); // keeps the icon / panel out of the recording
   win.setMenuBarVisibility(false);
   placeWindow();
@@ -145,7 +156,7 @@ function pickSource() {
       x: Math.round(wa.x + (wa.width - w) / 2),
       y: Math.round(wa.y + (wa.height - h) / 2),
       parent: win,
-      modal: true,
+      modal: !IS_MAC, // on macOS a modal child is a sheet hanging off the tiny icon window
       frame: false,
       resizable: false,
       backgroundColor: '#ffffff',
@@ -177,6 +188,7 @@ function pickRegion(display) {
   return new Promise((resolve) => {
     region = new BrowserWindow({
       ...display.bounds,
+      enableLargerThanScreen: true, // macOS: also cover the menu bar, so the fractions match the capture
       frame: false,
       transparent: true,
       hasShadow: false,
@@ -221,6 +233,7 @@ function showFrame(display, crop) {
   if (!crop) return;
   frame = new BrowserWindow({
     ...display.bounds,
+    enableLargerThanScreen: true,
     frame: false,
     transparent: true,
     hasShadow: false,
@@ -238,6 +251,7 @@ function showFrame(display, crop) {
     },
   });
   frame.setAlwaysOnTop(true, 'screen-saver');
+  onAllSpaces(frame);
   frame.setIgnoreMouseEvents(true);
   frame.setContentProtection(true);
   frame.loadFile(path.join(__dirname, '..', 'renderer', 'frame.html'), { hash: [crop.x, crop.y, crop.w, crop.h].join(',') });
@@ -253,6 +267,8 @@ function showFrame(display, crop) {
 
 function trayIcon() {
   const name = recState === 'recording' ? 'tray-rec.png' : recState === 'paused' ? 'tray-pause.png' : 'tray.png';
+  // The macOS menu bar wants a 16 pt icon: the 32 px file is used as its @2x version.
+  if (IS_MAC) return nativeImage.createFromBuffer(fs.readFileSync(asset(name)), { scaleFactor: 2 });
   return nativeImage.createFromPath(asset(name));
 }
 
@@ -280,7 +296,7 @@ function buildTrayMenu() {
       click: (item) => saveSettings({ audioFile: item.checked }),
     },
     {
-      label: 'Hide icon while recording (use tray or Ctrl+Shift+R)', type: 'checkbox', checked: settings.hideWhileRecording,
+      label: `Hide icon while recording (use ${IS_MAC ? 'menu bar icon' : 'tray'} or ${SHORTCUT})`, type: 'checkbox', checked: settings.hideWhileRecording,
       click: (item) => saveSettings({ hideWhileRecording: item.checked }),
     },
     {
@@ -388,6 +404,11 @@ ipcMain.on('source:clear', (e) => {
   showFrame(null, null);
 });
 ipcMain.on('picker:cancel', (e) => { if (fromPicker(e)) picker.__done(null); });
+// macOS only shows the wallpaper until the app is allowed to record the screen.
+ipcMain.handle('picker:screen-blocked', (e) => (
+  fromPicker(e) && IS_MAC && systemPreferences.getMediaAccessStatus('screen') !== 'granted'
+));
+ipcMain.on('picker:screen-settings', (e) => { if (fromPicker(e) && IS_MAC) shell.openExternal(SCREEN_SETTINGS); });
 
 ipcMain.on('region:done', (e, r) => {
   if (!fromRegion(e)) return;
@@ -435,8 +456,8 @@ ipcMain.on('rec:state', (e, state) => {
 ipcMain.on('open-file', (e, file) => {
   if (fromWin(e) && typeof file === 'string') shell.showItemInFolder(file);
 });
-// Computer sound is always taken from the Windows default output, so that is where it is changed.
-ipcMain.on('open-sound-settings', (e) => { if (fromWin(e)) shell.openExternal('ms-settings:sound'); });
+// Computer sound is always taken from the system default output, so that is where it is changed.
+ipcMain.on('open-sound-settings', (e) => { if (fromWin(e)) shell.openExternal(SOUND_SETTINGS); });
 ipcMain.on('quit', (e) => { if (fromWin(e)) app.quit(); });
 
 // ---------- recordings list ----------
@@ -478,9 +499,16 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => { if (win) win.show(); });
+  app.on('activate', () => { if (win) win.show(); }); // macOS: opened again from Finder / Launchpad
 
   app.whenReady().then(() => {
     loadSettings();
+    if (IS_MAC) {
+      app.dock.hide(); // like skipTaskbar on Windows: the icon and the menu bar item are the app
+      if (systemPreferences.getMediaAccessStatus('microphone') === 'not-determined') {
+        systemPreferences.askForMediaAccess('microphone').catch(() => {});
+      }
+    }
 
     // Only the main window may use the mic / screen; everything else is denied.
     session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => {
@@ -495,7 +523,8 @@ if (!app.requestSingleInstanceLock()) {
         const src = pendingSource && sources.find((s) => s.id === pendingSource.id);
         if (src) {
           response = { video: src };
-          if (request.audioRequested) response.audio = 'loopback'; // Windows system audio
+          // System sound: Windows loopback; on macOS 14.2+ a CoreAudio tap (needs NSAudioCaptureUsageDescription).
+          if (request.audioRequested) response.audio = 'loopback';
         }
       } catch { /* deny */ }
       try { callback(response); } catch { /* denied */ }

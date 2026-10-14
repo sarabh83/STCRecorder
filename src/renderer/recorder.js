@@ -13,11 +13,12 @@
     time: $('time'), pause: $('pause'), rec: $('rec'),
   };
 
+  const MAC = window.api.platform === 'darwin';
   const STRINGS = {
     chooseScreen: 'Choose screen or window',
     silenceMic: 'Microphone muted',
     silenceSystem: 'No computer sound',
-    defaultOutput: 'Windows default output',
+    defaultOutput: MAC ? 'System default output' : 'Windows default output',
     noMic: 'No microphone found',
     noSystem: 'No computer audio available for this source',
     micMissing: 'Chosen microphone not found, using default',
@@ -206,7 +207,7 @@
     if (open) {
       el.root.classList.add('shown');
       paintMini();
-      refreshDevices(); // also picks up a changed Windows default output
+      refreshDevices(); // also picks up a changed default output
       if (!el.viewLibrary.hidden) window.library.refresh();
       el.panel.setAttribute('aria-hidden', 'false');
       measure(); // grow the window first, then fade the panel in
@@ -275,7 +276,7 @@
       .filter((d) => d.kind === 'audioinput' && d.deviceId !== 'default' && d.deviceId !== 'communications')
       .map((d, i) => ({ id: d.deviceId, label: d.label || `Microphone ${i + 1}` }));
     paintMicList();
-    // Computer sound always comes from the Windows default output; show which one that is.
+    // Computer sound always comes from the system default output; show which one that is.
     const out = all.find((d) => d.kind === 'audiooutput' && d.deviceId === 'default');
     el.sysName.textContent = (out && out.label.replace(/^Default\s*-\s*/i, '')) || STRINGS.defaultOutput;
   }
@@ -636,6 +637,8 @@
     paintMicList();
     paintQuality();
   });
+
+  if (MAC) el.sysDev.title = 'Recorded from the macOS default output. Click to change it in Sound settings.';
 
   (async () => {
     S = await window.api.settings();
