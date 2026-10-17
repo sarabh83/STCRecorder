@@ -85,10 +85,12 @@ You can check or change all of these later in **System Settings > Privacy & Secu
 
 #### Updating on Mac
 
-Drag the new version onto Applications and choose **Replace**, then run the command from step 3 again. macOS may
-treat the new version as a new app and ask for the permissions again. If the screen list stays empty after an
-update, open **System Settings > Privacy & Security > Screen & System Audio Recording**, select **STC Recorder**,
-remove it with the **–** button, then open the app and allow it again.
+Drag the new version onto Applications and choose **Replace**, then run the command from step 3 again. On its first
+start the new version clears the permissions given to the old one, so macOS asks for them again: allow them as in
+step 5. (Without that, the old switches would still look on in System Settings but no longer work.)
+
+If the screen list still stays empty, click **Reset permission** in its yellow note, allow the screen again, then
+click **Restart app**.
 
 #### Uninstalling on Mac
 

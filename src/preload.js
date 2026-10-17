@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('picker', {
   cancel: () => ipcRenderer.send('picker:cancel'),
   openScreenSettings: () => ipcRenderer.send('picker:screen-settings'),
   relaunch: () => ipcRenderer.send('picker:relaunch'),
+  resetScreen: () => ipcRenderer.invoke('picker:reset-screen'),
 });
 
 contextBridge.exposeInMainWorld('frameApi', {

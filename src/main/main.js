@@ -5,6 +5,7 @@ const {
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { execFile } = require('child_process');
 const { RecordingSession } = require('./storage');
 const { listRecordings, recordingDir, playablePath, processRecording } = require('./library');
 
@@ -367,24 +368,28 @@ ipcMain.handle('pick-source', async (e) => {
   return res;
 });
 
-// { sources, blocked }: `blocked` = macOS does not let the app see the screen yet. Without that
-// permission (or until the app is restarted after it was given), getSources() throws.
+// { sources, blocked, detail }: `blocked` = macOS does not let the app see the screen. Without that
+// permission (or until the app is restarted after it was given), getSources() throws. `detail` is
+// what macOS answered, shown small in the picker so a problem on someone's Mac can be told apart.
 ipcMain.handle('picker:list', async (e) => {
-  if (!fromPicker(e)) return { sources: [], blocked: false };
+  if (!fromPicker(e)) return { sources: [], blocked: false, detail: '' };
+  const list = (types) => desktopCapturer.getSources({ types, thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: false });
   let sources = [];
-  let failed = false;
+  let error = '';
   try {
-    sources = await desktopCapturer.getSources({
-      types: ['screen', 'window'],
-      thumbnailSize: { width: 320, height: 180 },
-      fetchWindowIcons: false,
-    });
-  } catch {
-    failed = true;
+    sources = await list(['screen', 'window']);
+  } catch (err) {
+    try {
+      sources = await list(['screen']); // a window that cannot be listed must not hide the screens
+    } catch (err2) {
+      error = String((err2 && err2.message) || err2 || (err && err.message));
+    }
   }
   pickerDisplays = new Map(sources.map((s) => [s.id, s.display_id]));
+  const access = IS_MAC ? systemPreferences.getMediaAccessStatus('screen') : 'granted';
   return {
-    blocked: IS_MAC && (failed || systemPreferences.getMediaAccessStatus('screen') !== 'granted'),
+    blocked: IS_MAC && (!!error || access !== 'granted'),
+    detail: IS_MAC ? `macOS ${process.getSystemVersion()} · screen access: ${access} · ${error ? `list failed: ${error}` : `${sources.length} sources`}` : '',
     sources: sources
       .filter((s) => s.name && s.name !== APP_NAME)
       .map((s) => ({
@@ -421,6 +426,48 @@ ipcMain.on('picker:relaunch', (e) => {
   if (!fromPicker(e) || !IS_MAC || rec) return;
   app.relaunch();
   app.quit();
+});
+// ---------- macOS permissions ----------
+// The app is not signed with a developer certificate, so macOS ties each permission to one exact
+// build (its code hash). After an update the old entries still look switched on in System
+// Settings but no longer match, and macOS does not ask again.
+
+// { id, hash } of the running app's code signature, or null (not packaged / not readable).
+function signature() {
+  return new Promise((resolve) => {
+    if (!IS_MAC || !app.isPackaged) return resolve(null);
+    const bundle = path.resolve(process.execPath, '..', '..', '..'); // .../STC Recorder.app
+    execFile('codesign', ['-dv', bundle], (err, stdout, stderr) => {
+      const id = /^Identifier=(.+)$/m.exec(String(stderr));
+      const hash = /^CDHash=([0-9a-f]+)$/m.exec(String(stderr));
+      resolve(id && hash ? { id: id[1].trim(), hash: hash[1] } : null);
+    });
+  });
+}
+
+const tccReset = (service, id) => new Promise((resolve) => {
+  execFile('tccutil', ['reset', service, id], (err, stdout, stderr) => resolve(err ? String(stderr || err.message).trim() : ''));
+});
+
+// First start of a new build: clear the permissions macOS kept for the previous one, so it asks
+// afresh instead of silently refusing. Runs before anything asks for the screen or the mic.
+async function forgetOldPermissions() {
+  const sig = await signature();
+  if (!sig || settings.macBuild === sig.hash) return;
+  for (const service of ['ScreenCapture', 'Microphone', 'AudioCapture']) await tccReset(service, sig.id);
+  saveSettings({ macBuild: sig.hash });
+}
+
+// The same by hand, from the picker, for when the screen still cannot be seen.
+ipcMain.handle('picker:reset-screen', async (e) => {
+  if (!fromPicker(e) || !IS_MAC || rec) return '';
+  const sig = await signature();
+  if (!sig) return 'Could not read the app signature';
+  const error = await tccReset('ScreenCapture', sig.id);
+  if (error) return error;
+  app.relaunch();
+  app.quit();
+  return '';
 });
 
 ipcMain.on('region:done', (e, r) => {
@@ -527,10 +574,11 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => { if (win) win.show(); });
   app.on('activate', () => { if (win) win.show(); }); // macOS: opened again from Finder / Launchpad
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     loadSettings();
     if (IS_MAC) {
       app.dock.hide(); // like skipTaskbar on Windows: the icon and the menu bar item are the app
+      await forgetOldPermissions();
       if (systemPreferences.getMediaAccessStatus('microphone') === 'not-determined') {
         systemPreferences.askForMediaAccess('microphone').catch(() => {});
       }

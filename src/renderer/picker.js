@@ -33,7 +33,11 @@
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.picker.cancel(); });
   $('screenSettings').addEventListener('click', () => window.picker.openScreenSettings());
   $('relaunch').addEventListener('click', () => window.picker.relaunch());
-  const { sources, blocked } = await window.picker.list();
+  $('resetScreen').addEventListener('click', async () => {
+    $('resetError').textContent = await window.picker.resetScreen();
+  });
+  const { sources, blocked, detail } = await window.picker.list();
+  $('screenDetail').textContent = detail;
   for (const s of sources) add($(s.isScreen ? 'screens' : 'windows'), s);
   $('screenHint').hidden = !blocked;
   $('emptyHint').hidden = blocked || sources.length > 0;
