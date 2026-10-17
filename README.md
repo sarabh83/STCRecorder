@@ -135,6 +135,9 @@ protection, so they never show up in your video.
 - Any **screen or window**, with live thumbnails.
 - **Select an area**: drag a rectangle over part of a screen. A dashed green border marks it, and turns solid while
   recording.
+- **Switch in the middle of a recording**: click the screen name in the panel and pick another screen, window or
+  area. The recording goes on in the same file. Final processing fits every part into the size of the first one,
+  with black bars where the shapes differ.
 
 ### Choose your quality
 | Video | Presets |
