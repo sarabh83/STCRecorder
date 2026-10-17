@@ -5,6 +5,7 @@ const {
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { execFile } = require('child_process');
 const { RecordingSession } = require('./storage');
 const { listRecordings, recordingDir, playablePath, processRecording } = require('./library');
 
@@ -367,24 +368,28 @@ ipcMain.handle('pick-source', async (e) => {
   return res;
 });
 
-// { sources, blocked }: `blocked` = macOS does not let the app see the screen yet. Without that
-// permission (or until the app is restarted after it was given), getSources() throws.
+// { sources, blocked, detail }: `blocked` = macOS does not let the app see the screen. Without that
+// permission (or until the app is restarted after it was given), getSources() throws. `detail` is
+// what macOS answered, shown small in the picker so a problem on someone's Mac can be told apart.
 ipcMain.handle('picker:list', async (e) => {
-  if (!fromPicker(e)) return { sources: [], blocked: false };
+  if (!fromPicker(e)) return { sources: [], blocked: false, detail: '' };
+  const list = (types) => desktopCapturer.getSources({ types, thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: false });
   let sources = [];
-  let failed = false;
+  let error = '';
   try {
-    sources = await desktopCapturer.getSources({
-      types: ['screen', 'window'],
-      thumbnailSize: { width: 320, height: 180 },
-      fetchWindowIcons: false,
-    });
-  } catch {
-    failed = true;
+    sources = await list(['screen', 'window']);
+  } catch (err) {
+    try {
+      sources = await list(['screen']); // a window that cannot be listed must not hide the screens
+    } catch (err2) {
+      error = String((err2 && err2.message) || err2 || (err && err.message));
+    }
   }
   pickerDisplays = new Map(sources.map((s) => [s.id, s.display_id]));
+  const access = IS_MAC ? systemPreferences.getMediaAccessStatus('screen') : 'granted';
   return {
-    blocked: IS_MAC && (failed || systemPreferences.getMediaAccessStatus('screen') !== 'granted'),
+    blocked: IS_MAC && (!!error || access !== 'granted'),
+    detail: IS_MAC ? `macOS ${process.getSystemVersion()} · screen access: ${access} · ${error ? `list failed: ${error}` : `${sources.length} sources`}` : '',
     sources: sources
       .filter((s) => s.name && s.name !== APP_NAME)
       .map((s) => ({
@@ -422,6 +427,29 @@ ipcMain.on('picker:relaunch', (e) => {
   app.relaunch();
   app.quit();
 });
+// The app is not signed with a developer certificate, so macOS ties its permission to one exact
+// build. After an update the old entry stays switched on but no longer matches: remove it, so
+// macOS asks again for this build.
+// The bundle id macOS keeps this app's permissions under, from its Info.plist.
+function bundleId() {
+  try {
+    const plist = fs.readFileSync(path.join(path.dirname(process.execPath), '..', 'Info.plist'), 'utf8');
+    return /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/.exec(plist)[1];
+  } catch {
+    return null;
+  }
+}
+ipcMain.handle('picker:reset-screen', (e) => new Promise((resolve) => {
+  if (!fromPicker(e) || !IS_MAC || rec) return resolve('');
+  const id = bundleId();
+  if (!id) return resolve('Could not find the app id');
+  execFile('tccutil', ['reset', 'ScreenCapture', id], (err, stdout, stderr) => {
+    if (err) return resolve(String(stderr || err.message).trim() || 'reset failed');
+    app.relaunch();
+    app.quit();
+    return resolve('');
+  });
+}));
 
 ipcMain.on('region:done', (e, r) => {
   if (!fromRegion(e)) return;

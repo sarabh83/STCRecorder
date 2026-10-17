@@ -10,6 +10,8 @@ body { display: flex; flex-direction: column; border: 1px solid var(--line); }
 #screenHint, #emptyHint { margin: 14px 0 0; padding: 10px 14px; border-radius: 9px; background: var(--warn-soft); color: var(--warn-fg); line-height: 1.6; }
 #screenHint p { margin: 0 0 6px; }
 #screenHint p:last-child { margin: 0; }
+#screenDetail { font-size: 11px; opacity: .7; user-select: text; }
+#resetError { font-weight: 600; }
 #screenHint button { margin-right: 6px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 12px; }
 #areaHint { margin: 14px 0 0; padding: 8px 12px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-text); }
 header { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); -webkit-app-region: drag; }

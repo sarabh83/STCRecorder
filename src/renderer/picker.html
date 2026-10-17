@@ -22,6 +22,11 @@
     <p>1. Click <b>Open settings</b> and turn <b>STC Recorder</b> on under <i>Screen &amp; System Audio Recording</i>.<br>
       2. Click <b>Restart app</b>. macOS only applies the permission after a restart.</p>
     <p><button id="screenSettings">Open settings</button> <button id="relaunch">Restart app</button></p>
+    <p><b>Already on, and still not working?</b> That happens after an update: the switch belongs to the previous
+      version. Click <b>Reset permission</b>. The app restarts and macOS asks again: allow it, then click
+      <b>Restart app</b> once more.</p>
+    <p><button id="resetScreen">Reset permission</button> <span id="resetError"></span></p>
+    <p id="screenDetail"></p>
   </div>
   <p id="emptyHint" hidden>No screens or windows found. Close this and try again.</p>
   <p id="areaHint" hidden>Pick a screen, then drag over the part of it you want to record.</p>

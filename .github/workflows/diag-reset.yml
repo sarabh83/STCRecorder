@@ -1,0 +1,26 @@
+name: Diagnose reset permission
+on:
+  push:
+    branches: ['diag/**']
+jobs:
+  reset:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx electron-builder --mac dir --arm64 --publish never
+      - run: |
+          head -c 60 "dist/mac-arm64/STC Recorder.app/Contents/Info.plist"; echo
+          cp -R "dist/mac-arm64/STC Recorder.app" /Applications/
+          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "/Applications/STC Recorder.app"
+          tccutil reset ScreenCapture com.sarabh83.starecorder; echo "tccutil exit $?"
+        shell: bash {0}
+      - run: npm install --no-save playwright
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - run: node .github/diag/reset.js
+        timeout-minutes: 3
