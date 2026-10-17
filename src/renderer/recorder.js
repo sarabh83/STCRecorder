@@ -46,6 +46,7 @@
   let warnText = ''; // the silence warning on show, without its OK button
   let mini = { w: 0, h: 0 }; // size of the collapsed content last sent to the main process
   let quitTimer = null;
+  let starting = false; // between the click on Record and the recording running (seconds on macOS)
 
   const fmt = (ms) => {
     const s = Math.floor(ms / 1000);
@@ -157,6 +158,7 @@
 
   // While recording, the new choice replaces the old one in the same file.
   async function choose() {
+    if (starting) return; // the capture being started would not follow the new choice
     const res = await window.api.pickSource();
     if (!res) return;
     const prev = source;
@@ -463,10 +465,21 @@
   // ---------- recording ----------
 
   async function start() {
+    if (starting) return;
     if (!source) {
       await choose();
       if (!source) return;
     }
+    starting = true;
+    try {
+      await begin();
+    } finally {
+      starting = false;
+    }
+  }
+
+  // Captures the chosen source and starts recording it.
+  async function begin() {
     setMsg('');
     const made = []; // things to clean up if start fails halfway
     try {
