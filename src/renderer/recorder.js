@@ -23,6 +23,7 @@
     noSystem: 'No computer audio available for this source',
     micMissing: 'Chosen microphone not found, using default',
     badSource: 'Source unavailable, choose again',
+    switchFailed: 'Could not switch, still recording the previous source',
     saved: 'Saved – click to open',
     failed: 'Could not start recording',
   };
@@ -39,7 +40,7 @@
   let state = 'idle'; // idle | recording | paused
   let rt = null; // runtime objects of the current recording
   let lastFile = null;
-  let micMsgTimer = null;
+  let noteTimer = null;
   let open = false;
   let warning = false;
   let warnText = ''; // the silence warning on show, without its OK button
@@ -115,11 +116,15 @@
     if (name === 'library') window.library.refresh();
   }
 
+  function paintTitle() {
+    el.title.textContent = state === 'idle' ? 'STC Recorder' : `${state === 'paused' ? 'Paused' : 'Recording'}${rt && rt.size ? ` · ${rt.size}` : ''}`;
+  }
+
   function setState(next) {
     state = next;
     const idle = next === 'idle';
     if (!idle) showTab('record'); // while recording the panel is only the live controls
-    el.title.textContent = idle ? 'STC Recorder' : `${next === 'paused' ? 'Paused' : 'Recording'}${rt && rt.size ? ` · ${rt.size}` : ''}`;
+    paintTitle();
     el.rec.querySelector('span').textContent = idle ? 'Record' : 'Stop';
     el.rec.querySelector('i').dataset.icon = idle ? 'record' : 'stop';
     window.paintIcons(el.rec);
@@ -131,10 +136,9 @@
     window.api.setState(next);
   }
 
-  // The screen is decided when recording starts, so lock it meanwhile.
-  // The microphone and the two mute switches can be changed at any time.
+  // The screen, the microphone and the two mute switches can all be changed at any time.
   function paintControls() {
-    el.src.disabled = state !== 'idle';
+    el.src.title = state === 'idle' ? el.srcName.textContent : `Switch to another screen or window (now: ${el.srcName.textContent})`;
     const paintMute = (row, btn, muted, icon, name) => {
       row.classList.toggle('muted', muted);
       btn.querySelector('i').dataset.icon = muted ? `${icon}-off` : icon;
@@ -146,14 +150,22 @@
     paintMute(el.sysRow, el.sysMute, !!S.systemMuted, 'speaker', 'computer sound');
   }
 
+  function paintSource() {
+    el.srcName.textContent = !source ? STRINGS.chooseScreen : source.crop ? `${source.name} · selected area` : source.name;
+    paintControls();
+  }
+
+  // While recording, the new choice replaces the old one in the same file.
   async function choose() {
     const res = await window.api.pickSource();
-    if (res) {
-      source = res; // {id, name, crop?}: crop is the part of the screen to record, in fractions
-      const name = res.crop ? `${res.name} · selected area` : res.name;
-      el.srcName.textContent = name;
-      el.src.title = name;
-      setMsg('');
+    if (!res) return;
+    const prev = source;
+    source = res; // {id, name, crop?}: crop is the part of the screen to record, in fractions
+    paintSource();
+    setMsg('');
+    if (rt && !(await switchSource())) {
+      source = prev;
+      paintSource();
     }
   }
 
@@ -318,14 +330,79 @@
     return { src, analyser };
   }
 
+  // A message that goes away by itself after a few seconds.
+  function note(text) {
+    setMsg(text);
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => { if (el.msg.textContent === text) setMsg(''); }, 8000);
+  }
+
   // Show which microphone is really in use, so there is no doubt.
   function showMic(track) {
     const name = track.label;
     if (!name) return;
     const fellBack = S.micDeviceId && track.getSettings().deviceId !== S.micDeviceId;
-    setMsg(`${fellBack ? 'Default mic' : 'Mic'}: ${name}`);
-    clearTimeout(micMsgTimer);
-    micMsgTimer = setTimeout(() => { if (el.msg.textContent.includes(name)) setMsg(''); }, 8000);
+    note(`${fellBack ? 'Default mic' : 'Mic'}: ${name}`);
+  }
+
+  // ---------- screen ----------
+
+  // The chosen screen or window, with the computer sound. Only upper limits: the screen is
+  // recorded at its own resolution, never scaled up.
+  function capture() {
+    return navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: S.fps, max: S.fps }, width: { max: S.maxHeight * 3 }, height: { max: S.maxHeight } },
+      audio: true,
+    });
+  }
+
+  // "1920×1080": what goes into the file from this capture (only the area, when one was drawn).
+  function sizeOf(screenTrack) {
+    const vs = screenTrack.getSettings();
+    const px = vs.width && vs.height && (source.crop ? window.cropPx(vs.width, vs.height, source.crop) : vs);
+    return px ? `${px.width}×${px.height}` : '';
+  }
+
+  // The user closed the shared window / stopped sharing from the OS.
+  function watchEnd(screenTrack) {
+    screenTrack.addEventListener('ended', () => { if (rt && rt.screenTrack === screenTrack) stop(); });
+  }
+
+  // Another screen, window or area was chosen while recording: capture it and feed it into the
+  // same video track, so the file simply goes on with the new picture. False if that failed.
+  async function switchSource() {
+    const session = rt;
+    let display;
+    try {
+      display = await capture();
+    } catch {
+      setMsg(STRINGS.switchFailed);
+      return false;
+    }
+    if (rt !== session) { // the recording ended meanwhile
+      display.getTracks().forEach((t) => t.stop());
+      return true;
+    }
+    const screenTrack = display.getVideoTracks()[0];
+    rt.pipe.use(screenTrack, source.crop);
+    watchEnd(screenTrack);
+    // The computer sound comes with the capture: wire the new one in, then let the old capture go.
+    const sysTracks = display.getAudioTracks();
+    const sys = sysTracks.length ? wire(rt.ctx, new MediaStream([sysTracks[0]]), rt.sysGain) : null;
+    if (rt.sysSrc) rt.sysSrc.disconnect();
+    const old = rt.display;
+    Object.assign(rt, {
+      display, screenTrack, size: sizeOf(screenTrack), sysSrc: sys && sys.src, sysAnalyser: sys && sys.analyser,
+    });
+    old.getTracks().forEach((t) => t.stop());
+    rt.watch = null; // restart the silence check on the new sound
+    rt.ack.system = false;
+    applyMutes();
+    paintTitle();
+    if (sys) note(`Now recording: ${el.srcName.textContent}`);
+    else setMsg(STRINGS.noSystem);
+    window.api.recSource({ name: source.name, frameSize: rt.pipe.size() });
+    return true;
   }
 
   // Another microphone was chosen while recording: wire the new one in, then let the old one go.
@@ -393,19 +470,16 @@
     setMsg('');
     const made = []; // things to clean up if start fails halfway
     try {
-      // Only upper limits: the screen is recorded at its own resolution, never scaled up.
-      const display = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: S.fps, max: S.fps }, width: { max: S.maxHeight * 3 }, height: { max: S.maxHeight } },
-        audio: true,
-      });
+      const display = await capture();
       made.push(display);
       const screenTrack = display.getVideoTracks()[0];
       // What goes into the file: the whole capture, or only the area drawn in the picker.
-      const videoTrack = source.crop ? window.cropTrack(screenTrack, source.crop) : screenTrack;
+      const pipe = window.videoPipe();
+      pipe.use(screenTrack, source.crop);
+      const videoTrack = pipe.track;
+      made.push(new MediaStream([videoTrack]));
       videoTrack.contentHint = 'detail'; // text must stay sharp: drop frames before dropping resolution
-      const vs = screenTrack.getSettings();
-      const px = vs.width && vs.height && (source.crop ? window.cropPx(vs.width, vs.height, source.crop) : vs);
-      const size = px ? `${px.width}×${px.height}` : '';
+      const size = sizeOf(screenTrack);
 
       // Processing is off by default so the voice is not coloured.
       let micStream = null;
@@ -494,8 +568,7 @@
         setOpen(true);
       };
 
-      // The user closed the shared window / stopped sharing from the OS.
-      screenTrack.addEventListener('ended', () => stop());
+      watchEnd(screenTrack);
 
       const detector = new window.SilenceDetector({ thresholdDb: S.silenceThresholdDb, timeoutMs: SILENCE_MS });
       const now = performance.now();
@@ -503,10 +576,10 @@
       detector.pause(); // rewatch() starts it on the sound that is not muted
 
       rt = {
-        display, videoTrack, micStream, ctx, recorder, audioRecorder, detector, size,
+        display, screenTrack, pipe, videoTrack, micStream, ctx, recorder, audioRecorder, detector, size,
         micGain, sysGain,
         micSrc: micNodes && micNodes.src, micAnalyser: micNodes && micNodes.analyser,
-        sysAnalyser: sysNodes && sysNodes.analyser,
+        sysSrc: sysNodes && sysNodes.src, sysAnalyser: sysNodes && sysNodes.analyser,
         watch: null, // 'mic' | 'system' | null: the sound the silence check listens to
         ack: { mic: false, system: false }, // silence warnings the user answered with "Don't show again"
         buf: new Float32Array(1024),
@@ -535,7 +608,8 @@
     if (!rt) return;
     clearInterval(rt.timer);
     rt.display.getTracks().forEach((t) => t.stop());
-    rt.videoTrack.stop(); // the cropped copy, when an area was selected
+    rt.pipe.stop();
+    rt.videoTrack.stop();
     if (rt.micStream) rt.micStream.getTracks().forEach((t) => t.stop());
     rt.ctx.close().catch(() => {});
     rt = null;

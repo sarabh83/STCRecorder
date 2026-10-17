@@ -448,6 +448,19 @@ ipcMain.on('rec:chunk', (e, buf) => {
 ipcMain.on('rec:audio-chunk', (e, buf) => {
   if (fromWin(e) && rec && buf) rec.appendAudio(Buffer.from(buf));
 });
+// The screen was switched mid-recording. The size of the first picture is kept, so final
+// processing can fit every part of the recording into that size.
+ipcMain.on('rec:source', (e, info) => {
+  if (!fromWin(e) || !rec || !info) return;
+  const meta = rec.journal.meta;
+  const even = (v) => Math.floor(Number(v) / 2) * 2;
+  const fs0 = info.frameSize;
+  rec.note({
+    sources: [...(meta.sources || [meta.source]), String(info.name || '')],
+    ...(fs0 && even(fs0.width) > 0 && even(fs0.height) > 0 && !meta.frameSize
+      && { frameSize: { width: even(fs0.width), height: even(fs0.height) } }),
+  });
+});
 ipcMain.handle('rec:stop', async (e) => {
   if (!fromWin(e) || !rec) return null;
   stopTimers();

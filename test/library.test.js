@@ -56,3 +56,15 @@ test('processing uses the CRF recipe and a constant frame rate', () => {
   assert.strictEqual(opt('-i'), 'in.webm');
   assert.strictEqual(args[args.length - 1], 'out.mp4');
 });
+
+test('a recording whose screen was switched is fitted into the size of its first picture', () => {
+  const { base, add } = makeBase();
+  add('2026-01-01_10-00-00', { startedAt: 1, done: true, meta: { frameSize: { width: 1280, height: 720 } } });
+  add('2026-01-02_10-00-00', { startedAt: 2, done: true, meta: {} });
+  assert.deepStrictEqual(listRecordings(base).map((r) => r.frameSize), [null, { width: 1280, height: 720 }]);
+
+  const args = ffmpegArgs('in.webm', 'out.mp4', 30, { width: 1280, height: 720 });
+  assert.strictEqual(args[args.indexOf('-vf') + 1],
+    'scale=1280:720:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=1280:720:(ow-iw)/2:(oh-ih)/2');
+  assert.ok(!ffmpegArgs('in.webm', 'out.mp4', 30).includes('-vf'), 'one-source recordings are not scaled');
+});

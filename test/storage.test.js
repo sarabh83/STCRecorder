@@ -81,3 +81,12 @@ test('flushSync does not throw while open or after close', async () => {
   await s.finish();
   s.flushSync();
 });
+
+test('notes are added to the journal straight away', async () => {
+  const s = new RecordingSession(tmp(), { source: 'Screen 1' });
+  await s.start();
+  s.note({ sources: ['Screen 1', 'Chrome'] });
+  const journal = JSON.parse(fs.readFileSync(s.journalFile, 'utf8'));
+  assert.deepStrictEqual(journal.meta, { source: 'Screen 1', sources: ['Screen 1', 'Chrome'] });
+  await s.finish();
+});

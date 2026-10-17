@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('api', {
   recChunk: (buf) => ipcRenderer.send('rec:chunk', buf),
   recAudioChunk: (buf) => ipcRenderer.send('rec:audio-chunk', buf),
   recStop: () => ipcRenderer.invoke('rec:stop'),
+  recSource: (info) => ipcRenderer.send('rec:source', info),
   setState: (state) => ipcRenderer.send('rec:state', state),
   uiMini: (width, height) => ipcRenderer.send('ui:mini', width, height),
   openSoundSettings: () => ipcRenderer.send('open-sound-settings'),

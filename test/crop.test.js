@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { cropPx } = require('../src/renderer/crop');
+const { cropPx, retimer } = require('../src/renderer/crop');
 
 test('a selected area becomes even pixels inside the frame', () => {
   assert.deepStrictEqual(cropPx(1920, 1080, { x: 0.25, y: 0.5, w: 0.5, h: 0.25 }), { x: 480, y: 540, width: 960, height: 270 });
@@ -16,4 +16,14 @@ test('an area that reaches past the edge is clipped, never empty', () => {
   assert.ok(r.width >= 2 && r.height >= 2);
   const edge = cropPx(1920, 1080, { x: 1, y: 1, w: 0, h: 0 });
   assert.deepStrictEqual(edge, { x: 1918, y: 1078, width: 2, height: 2 });
+});
+
+test('frame times keep rising when the screen is switched mid-recording', () => {
+  const t = retimer(100);
+  assert.deepStrictEqual([0, 33, 66].map((ts) => t.map(ts)), [0, 33, 66]); // the first capture is untouched
+  t.next(); // a new capture counts from its own start again
+  assert.deepStrictEqual([5, 38].map((ts) => t.map(ts)), [166, 199]);
+  t.next();
+  assert.deepStrictEqual([1000000].map((ts) => t.map(ts)), [299]);
+  assert.strictEqual(t.map(299), 300); // never the same time twice
 });

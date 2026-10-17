@@ -95,6 +95,12 @@ class RecordingSession {
     this.audioFh = null;
   }
 
+  // Adds to the recording's notes in the journal (e.g. the screens it switched between).
+  note(patch) {
+    Object.assign(this.journal.meta, patch);
+    writeJsonAtomic(this.journalFile, this.journal);
+  }
+
   async checkpoint() {
     await this.flush();
     this.journal.checkpoints.push({ t: Date.now(), bytes: this.bytes, audioBytes: this.audioBytes });

@@ -54,6 +54,8 @@ function listRecordings(baseDir, skipDir) {
         size: stat.size,
         done: !!journal.done,
         fps: (journal.meta && journal.meta.fps) || 30,
+        // set when the screen was switched mid-recording: the size of its first picture
+        frameSize: (journal.meta && journal.meta.frameSize) || null,
         mp4Size: sizeOf(path.join(dir, MP4)),
       });
     } catch {
@@ -76,13 +78,20 @@ function playablePath(dir) {
   return sizeOf(mp4) ? mp4 : path.join(dir, FILE);
 }
 
-function ffmpegArgs(src, dst, fps) {
+// The size of a picture fitted into `size` ({width, height}): kept in proportion, black bars around.
+const fitInto = ({ width: w, height: h }) => (
+  `scale=${w}:${h}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2`
+);
+
+// `frameSize`: only for a recording whose screen was switched, so its parts may differ in size.
+function ffmpegArgs(src, dst, fps, frameSize) {
   return [
     '-y',
     // Screen recordings have variable frame timing that the mp4 muxer can choke on;
     // regenerate clean timestamps and write a constant frame rate.
     '-fflags', '+genpts',
     '-i', src,
+    ...(frameSize ? ['-vf', fitInto(frameSize)] : []),
     '-c:v', 'libx264',
     '-crf', '20',
     '-preset', 'medium',
@@ -100,9 +109,9 @@ function ffmpegArgs(src, dst, fps) {
 
 // Runs ffmpeg on one recording. Resolves with { mp4Size }, rejects with a short message.
 // onProgress gets 0..1. The returned promise has .cancel().
-function processRecording(dir, { durationMs, fps }, onProgress) {
+function processRecording(dir, { durationMs, fps, frameSize }, onProgress) {
   const part = path.join(dir, PART);
-  const args = ffmpegArgs(path.join(dir, FILE), part, fps);
+  const args = ffmpegArgs(path.join(dir, FILE), part, fps, frameSize);
   const lines = [];
   let child = null;
   const promise = new Promise((resolve, reject) => {
