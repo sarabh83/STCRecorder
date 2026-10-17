@@ -76,9 +76,9 @@ macOS asks for each permission once. Answer like this:
 | **Screen Recording** | the first time you click *Choose screen or window* | **Open System Settings**, turn **STC Recorder** on, then choose **Quit & Reopen** |
 | **System Audio Recording** | the first recording with computer sound on | **Allow** |
 
-If the screen list shows only your wallpaper, Screen Recording is still off. The yellow note in that window has a
-button that opens the right settings page. Turn **STC Recorder** on there, then quit the app (menu bar icon >
-**Quit**) and open it again.
+If the screen list is empty and shows a yellow note instead, Screen Recording is still off (or the app has not been
+restarted since you turned it on). Click **Open settings** in the note, turn **STC Recorder** on, then click
+**Restart app**.
 
 You can check or change all of these later in **System Settings > Privacy & Security** (sections *Microphone* and
 *Screen & System Audio Recording*).
@@ -86,7 +86,7 @@ You can check or change all of these later in **System Settings > Privacy & Secu
 #### Updating on Mac
 
 Drag the new version onto Applications and choose **Replace**, then run the command from step 3 again. macOS may
-treat the new version as a new app and ask for the permissions again. If recording shows only the wallpaper after an
+treat the new version as a new app and ask for the permissions again. If the screen list stays empty after an
 update, open **System Settings > Privacy & Security > Screen & System Audio Recording**, select **STC Recorder**,
 remove it with the **–** button, then open the app and allow it again.
 
