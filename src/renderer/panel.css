@@ -58,8 +58,8 @@ i[data-icon] { display: inline-flex; font-size: 18px; line-height: 0; }
   background: var(--fg); color: #fff; font-size: 12px; font-weight: 600;
   white-space: nowrap; transform-origin: calc(100% - 22px) 100%; animation: tip-in .24s cubic-bezier(.2, .9, .25, 1); }
 #tip::after { content: ''; position: absolute; right: 17px; bottom: -4px; width: 10px; height: 10px; border-radius: 2px; background: inherit; transform: rotate(45deg); }
-/* "OK": I know, stop reminding me about this sound for the rest of the recording */
-.ok { flex: none; height: 22px; padding: 0 9px; border-radius: 6px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700;
+/* "Don't show again": I know, stop reminding me about this sound for the rest of the recording */
+.ok { flex: none; height: 22px; padding: 0 9px; white-space: nowrap; border-radius: 6px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700;
   transition: background-color .15s; }
 .ok:hover { background: var(--accent-hover); }
 @keyframes tip-in { from { opacity: 0; transform: translateY(6px) scale(.9); } }

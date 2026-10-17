@@ -66,7 +66,7 @@
     if (warn) {
       const ok = document.createElement('button');
       ok.className = 'ok';
-      ok.textContent = 'OK';
+      ok.textContent = el.tipOk.textContent;
       ok.title = el.tipOk.title;
       ok.addEventListener('click', dismissWarning);
       el.msg.appendChild(ok);
@@ -85,7 +85,7 @@
     paintMini();
   }
 
-  // "OK" on a silence warning: the silence is on purpose, so stop reminding about that
+  // "Don't show again" on a silence warning: the silence is on purpose, so stop reminding about that
   // sound for the rest of this recording.
   function dismissWarning() {
     if (rt && rt.watch) rt.ack[rt.watch] = true;
@@ -508,7 +508,7 @@
         micSrc: micNodes && micNodes.src, micAnalyser: micNodes && micNodes.analyser,
         sysAnalyser: sysNodes && sysNodes.analyser,
         watch: null, // 'mic' | 'system' | null: the sound the silence check listens to
-        ack: { mic: false, system: false }, // silence warnings the user answered with OK
+        ack: { mic: false, system: false }, // silence warnings the user answered with "Don't show again"
         buf: new Float32Array(1024),
         startedAt: now, pausedAt: 0, pausedTotal: 0, lastSecond: -1,
         timer: setInterval(tick, TICK_MS),

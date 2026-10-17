@@ -124,7 +124,7 @@ protection, so they never show up in your video.
 
 ### Warns you when something is wrong
 - If the sound you are watching is silent for 15 seconds, the icon turns yellow and a small tooltip tells you which
-  one (*Microphone muted* or *No computer sound*). Press **OK** if the silence is on purpose and the reminder is
+  one (*Microphone muted* or *No computer sound*). Press **Don't show again** if the silence is on purpose and the reminder is
   turned off for the rest of that recording.
 - Tells you which microphone is really in use, and says so when the chosen one is gone and the default is used
   instead.
