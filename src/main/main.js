@@ -367,22 +367,33 @@ ipcMain.handle('pick-source', async (e) => {
   return res;
 });
 
+// { sources, blocked }: `blocked` = macOS does not let the app see the screen yet. Without that
+// permission (or until the app is restarted after it was given), getSources() throws.
 ipcMain.handle('picker:list', async (e) => {
-  if (!fromPicker(e)) return [];
-  const sources = await desktopCapturer.getSources({
-    types: ['screen', 'window'],
-    thumbnailSize: { width: 320, height: 180 },
-    fetchWindowIcons: false,
-  });
+  if (!fromPicker(e)) return { sources: [], blocked: false };
+  let sources = [];
+  let failed = false;
+  try {
+    sources = await desktopCapturer.getSources({
+      types: ['screen', 'window'],
+      thumbnailSize: { width: 320, height: 180 },
+      fetchWindowIcons: false,
+    });
+  } catch {
+    failed = true;
+  }
   pickerDisplays = new Map(sources.map((s) => [s.id, s.display_id]));
-  return sources
-    .filter((s) => s.name && s.name !== APP_NAME)
-    .map((s) => ({
-      id: s.id,
-      name: s.name,
-      isScreen: s.id.startsWith('screen:'),
-      thumb: s.thumbnail.isEmpty() ? '' : s.thumbnail.toDataURL(),
-    }));
+  return {
+    blocked: IS_MAC && (failed || systemPreferences.getMediaAccessStatus('screen') !== 'granted'),
+    sources: sources
+      .filter((s) => s.name && s.name !== APP_NAME)
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        isScreen: s.id.startsWith('screen:'),
+        thumb: s.thumbnail.isEmpty() ? '' : s.thumbnail.toDataURL(),
+      })),
+  };
 });
 // `area`: the user wants to draw the part of that screen to record, instead of all of it.
 ipcMain.on('picker:choose', async (e, src, area) => {
@@ -404,11 +415,13 @@ ipcMain.on('source:clear', (e) => {
   showFrame(null, null);
 });
 ipcMain.on('picker:cancel', (e) => { if (fromPicker(e)) picker.__done(null); });
-// macOS only shows the wallpaper until the app is allowed to record the screen.
-ipcMain.handle('picker:screen-blocked', (e) => (
-  fromPicker(e) && IS_MAC && systemPreferences.getMediaAccessStatus('screen') !== 'granted'
-));
 ipcMain.on('picker:screen-settings', (e) => { if (fromPicker(e) && IS_MAC) shell.openExternal(SCREEN_SETTINGS); });
+// macOS applies a new Screen Recording permission only to a fresh start of the app.
+ipcMain.on('picker:relaunch', (e) => {
+  if (!fromPicker(e) || !IS_MAC || rec) return;
+  app.relaunch();
+  app.quit();
+});
 
 ipcMain.on('region:done', (e, r) => {
   if (!fromRegion(e)) return;

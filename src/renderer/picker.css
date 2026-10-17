@@ -7,8 +7,10 @@ body { display: flex; flex-direction: column; border: 1px solid var(--line); }
 .tabs button { height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: none; color: var(--muted); transition: background-color .15s, color .15s, box-shadow .15s; }
 .tabs button:hover:not(.on) { color: var(--fg); }
 .tabs button.on { background: var(--bg); color: var(--accent-text); font-weight: 600; box-shadow: 0 1px 2px rgba(5, 19, 32, .14); }
-#screenHint { margin: 14px 0 0; padding: 8px 12px; border-radius: 9px; background: var(--warn-soft); color: var(--warn-fg); }
-#screenHint button { margin-left: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 10px; }
+#screenHint, #emptyHint { margin: 14px 0 0; padding: 10px 14px; border-radius: 9px; background: var(--warn-soft); color: var(--warn-fg); line-height: 1.6; }
+#screenHint p { margin: 0 0 6px; }
+#screenHint p:last-child { margin: 0; }
+#screenHint button { margin-right: 6px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 12px; }
 #areaHint { margin: 14px 0 0; padding: 8px 12px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-text); }
 header { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); -webkit-app-region: drag; }
 h1 { font-size: 15px; margin: 0; font-weight: 600; }

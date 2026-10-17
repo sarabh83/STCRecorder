@@ -33,8 +33,8 @@ contextBridge.exposeInMainWorld('picker', {
   list: () => ipcRenderer.invoke('picker:list'),
   choose: (src, area) => ipcRenderer.send('picker:choose', src, area),
   cancel: () => ipcRenderer.send('picker:cancel'),
-  screenBlocked: () => ipcRenderer.invoke('picker:screen-blocked'),
   openScreenSettings: () => ipcRenderer.send('picker:screen-settings'),
+  relaunch: () => ipcRenderer.send('picker:relaunch'),
 });
 
 contextBridge.exposeInMainWorld('frameApi', {

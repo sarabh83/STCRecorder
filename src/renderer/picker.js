@@ -32,8 +32,9 @@
   $('cancel').addEventListener('click', () => window.picker.cancel());
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.picker.cancel(); });
   $('screenSettings').addEventListener('click', () => window.picker.openScreenSettings());
-  const list = await window.picker.list();
-  for (const s of list) add($(s.isScreen ? 'screens' : 'windows'), s);
-  // Asked after listing: listing the screens is what makes macOS ask the user for access.
-  $('screenHint').hidden = !(await window.picker.screenBlocked());
+  $('relaunch').addEventListener('click', () => window.picker.relaunch());
+  const { sources, blocked } = await window.picker.list();
+  for (const s of sources) add($(s.isScreen ? 'screens' : 'windows'), s);
+  $('screenHint').hidden = !blocked;
+  $('emptyHint').hidden = blocked || sources.length > 0;
 })();

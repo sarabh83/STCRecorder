@@ -17,9 +17,13 @@
   <button id="cancel">Cancel</button>
 </header>
 <main class="scroll-area">
-  <p id="screenHint" hidden>macOS has not allowed STC Recorder to record the screen yet, so only the wallpaper shows.
-    Turn STC Recorder on under Screen Recording, then quit and reopen the app.
-    <button id="screenSettings">Open Privacy settings</button></p>
+  <div id="screenHint" hidden>
+    <p><b>STC Recorder needs permission to record the screen.</b></p>
+    <p>1. Click <b>Open settings</b> and turn <b>STC Recorder</b> on under <i>Screen &amp; System Audio Recording</i>.<br>
+      2. Click <b>Restart app</b>. macOS only applies the permission after a restart.</p>
+    <p><button id="screenSettings">Open settings</button> <button id="relaunch">Restart app</button></p>
+  </div>
+  <p id="emptyHint" hidden>No screens or windows found. Close this and try again.</p>
   <p id="areaHint" hidden>Pick a screen, then drag over the part of it you want to record.</p>
   <h2>Screens</h2><div id="screens" class="grid"></div>
   <div id="windowsPart"><h2>Windows</h2><div id="windows" class="grid"></div></div>
