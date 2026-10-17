@@ -1,7 +1,7 @@
 {
   "name": "stc-recorder",
   "productName": "STC Recorder",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "STC Recorder - very light screen recorder with crash-safe backups",
   "author": "Taha Hosseinpour",
   "main": "src/main/main.js",
